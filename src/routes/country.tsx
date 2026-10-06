@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { SignalLoading } from "@/components/signal-loading";
 import { getSportyLink, savePlayerCountry } from "@/lib/admin-snapshot";
 import { readPending, savePending } from "@/lib/pending-registration";
@@ -96,9 +96,9 @@ function CountryPage() {
               type="button"
               onClick={() => void chooseCountry("Ghana")}
               disabled={saving}
-              className="country-btn flex h-14 w-full items-center justify-center gap-3 rounded-2xl text-base font-extrabold tracking-wide disabled:opacity-60"
+              className="country-btn flex min-h-20 w-full items-center gap-3 rounded-2xl px-4 text-left disabled:opacity-60"
             >
-              <span className="inline-flex items-center gap-3">
+              <span className="country-flag-wrap">
                 <svg viewBox="0 0 24 16" className="country-flag h-6 w-9 rounded-sm" aria-hidden>
                   <rect width="24" height="5.34" fill="#ce1126" />
                   <rect y="5.33" width="24" height="5.34" fill="#fcd116" />
@@ -108,24 +108,31 @@ function CountryPage() {
                     fill="#000"
                   />
                 </svg>
-                Ghana
               </span>
+              <span className="country-button-copy">
+                <span className="country-button-name">Ghana</span>
+                <span className="country-button-detail">Continue with Ghana</span>
+              </span>
+              <ArrowRight className="country-button-arrow size-5" aria-hidden />
             </button>
             <button
               type="button"
               onClick={() => void chooseCountry("Nigeria")}
               disabled={saving}
-              style={{ "--i": 1 } as React.CSSProperties}
-              className="country-btn flex h-14 w-full items-center justify-center gap-3 rounded-2xl text-base font-extrabold tracking-wide disabled:opacity-60"
+              className="country-btn flex min-h-20 w-full items-center gap-3 rounded-2xl px-4 text-left disabled:opacity-60"
             >
-              <span className="inline-flex items-center gap-3">
+              <span className="country-flag-wrap">
                 <svg viewBox="0 0 24 16" className="country-flag h-6 w-9 rounded-sm" aria-hidden>
                   <rect width="8" height="16" fill="#008751" />
                   <rect x="8" width="8" height="16" fill="#fff" />
                   <rect x="16" width="8" height="16" fill="#008751" />
                 </svg>
-                Nigeria
               </span>
+              <span className="country-button-copy">
+                <span className="country-button-name">Nigeria</span>
+                <span className="country-button-detail">Continue with Nigeria</span>
+              </span>
+              <ArrowRight className="country-button-arrow size-5" aria-hidden />
             </button>
           </div>
         </section>
