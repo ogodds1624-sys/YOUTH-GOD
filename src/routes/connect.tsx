@@ -128,20 +128,20 @@ function ConnectPage() {
           </span>
           <span>Back</span>
         </button>
-        <h1 className="mt-4 text-center text-[28px] leading-tight font-extrabold tracking-tight">
+        <h1 className="connect-heading mt-4 text-center text-[28px] leading-tight font-extrabold tracking-tight">
           Connect your SportyBet
         </h1>
         <p className="mt-3 text-center text-base leading-relaxed text-muted">
           Enter your SportyBet account number to link it to Casino World.
         </p>
         <div className="my-8 flex justify-center">
-          <span className="grid size-20 place-items-center rounded-[22px] bg-red text-5xl font-black text-white">
+          <span className="sporty-connect-logo grid size-20 place-items-center rounded-[22px] text-5xl font-black text-white" aria-label="SportyBet">
             S
           </span>
         </div>
         <form onSubmit={onSubmit}>
             <div className="mt-3 grid min-w-0 grid-cols-[6.25rem_minmax(0,1fr)] gap-2">
-              <div className="flex h-14 min-w-0 items-center justify-center gap-1.5 rounded-2xl border border-line bg-ink px-2 text-sm font-semibold">
+              <div className="connect-prefix flex h-14 min-w-0 items-center justify-center gap-1.5 rounded-2xl px-2 text-sm font-bold">
                 {nigeria ? <NigeriaFlag /> : <GhanaFlag />}
                 {nigeria ? "+234" : "+233"}
               </div>
@@ -153,14 +153,14 @@ function ConnectPage() {
                 placeholder={nigeria ? "8031234567" : "244123456"}
                 value={number}
                 onChange={(event) => setNumber(event.target.value)}
-                className="h-14 min-w-0 rounded-2xl border border-line bg-ink px-3 text-base text-white outline-none placeholder:text-white/40"
+                className="connect-input h-14 min-w-0 rounded-2xl px-3 text-base text-white outline-none placeholder:text-white/40"
               />
             </div>
             {error ? <p className="mt-3 text-sm text-red">{error}</p> : null}
             <button
               type="submit"
               disabled={busy}
-              className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-red text-lg font-bold text-white disabled:opacity-60"
+              className="connect-submit mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-base font-extrabold tracking-wide disabled:opacity-60"
             >
               {busy ? "Saving…" : "Connect account"}
               <ArrowRight className="size-5" aria-hidden />
