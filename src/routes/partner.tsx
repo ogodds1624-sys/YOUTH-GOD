@@ -394,7 +394,7 @@ function Overview({
         <Stat
           label={`YOUR EARNINGS · ${portal.commission}%`}
           value={`GHS ${portal.earnings.toLocaleString("en-GH")}`}
-          note={`${portal.commission}% deducted from confirmed Ghana payments`}
+          note={`After ${portal.commission}% commission on confirmed Ghana payments`}
           gold
           icon={<Star className="size-4" />}
         />
@@ -416,7 +416,7 @@ function Overview({
         <Stat
           label={`YOUR EARNINGS · ${portal.commission}%`}
           value={`₦${portal.nigeriaEarnings.toLocaleString("en-NG")}`}
-          note={`${portal.commission}% deducted from confirmed Nigeria payments`}
+          note={`After ${portal.commission}% commission on confirmed Nigeria payments`}
           gold
           icon={<Star className="size-4" />}
         />
@@ -453,7 +453,7 @@ function DayList({
           <li key={country + day.label} className="partner-week week-row desk-row whitespace-nowrap text-sm">
             <span className={day.today ? "font-extrabold text-red" : "font-bold text-[#9aa3b2]"}>{day.label}</span>
             <span className="text-[#8b95a7]">
-              {money(day.revenue)} · {money(day.cut)} your cut
+              {money(day.revenue)} · {money(day.earnings)} partner earnings
             </span>
           </li>
         ))}

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { adminAuthMiddleware } from "@/lib/admin-auth";
 import type { Sql } from "@/lib/db";
 import { isNairaAmount } from "@/lib/desk-session";
+import { partnerEarnings } from "@/lib/partner-earnings";
 
 export type AdminMember = {
   id: string;
@@ -134,16 +135,16 @@ export type PartnerPortal = {
   active: number;
   todayRevenue: number;
   todaySales: number;
-  todayCut: number;
+  todayEarnings: number;
   revenue: number;
   earnings: number;
   nigeriaTodayRevenue: number;
   nigeriaTodaySales: number;
-  nigeriaTodayCut: number;
+  nigeriaTodayEarnings: number;
   nigeriaRevenue: number;
   nigeriaEarnings: number;
-  days: { label: string; revenue: number; cut: number; today: boolean }[];
-  nigeriaDays: { label: string; revenue: number; cut: number; today: boolean }[];
+  days: { label: string; revenue: number; earnings: number; today: boolean }[];
+  nigeriaDays: { label: string; revenue: number; earnings: number; today: boolean }[];
   referrals: {
     name: string;
     email: string;
@@ -182,10 +183,6 @@ export function isNairaPayment(amount: number, country: string | null | undefine
   if (country === "Nigeria") return true;
   if (country === "Ghana") return false;
   return isNairaAmount(amount);
-}
-
-export function commissionCut(amount: number, percent: number) {
-  return Math.round((amount * percent) / 100);
 }
 
 export function liveDayLabel(key: string, timeZone: string) {
@@ -1403,7 +1400,7 @@ export const getPartnerPortal = createServerFn({ method: "POST" })
       where p.status = 'confirmed' and p.counts_revenue is not false
         and lower(partner.code) = ${code}
     `;
-    const cut = (amount: number) => commissionCut(amount, commission);
+    const earnings = (amount: number) => partnerEarnings(amount, commission);
     const ghanaPayments = payments.filter((row) => !isNairaPayment(Number(row.amount), row.country));
     const nigeriaPayments = payments.filter((row) => isNairaPayment(Number(row.amount), row.country));
     const revenue = ghanaPayments.reduce((sum, row) => sum + Number(row.amount), 0);
@@ -1424,7 +1421,7 @@ export const getPartnerPortal = createServerFn({ method: "POST" })
         return {
           label: liveDayLabel(key, timeZone),
           revenue: amount,
-          cut: cut(amount),
+          earnings: earnings(amount),
           today: key === todayKey,
         };
       });
@@ -1469,14 +1466,14 @@ export const getPartnerPortal = createServerFn({ method: "POST" })
       active: new Set(payments.map((row) => row.user_id)).size,
       todayRevenue,
       todaySales: todayPayments.length,
-      todayCut: cut(todayRevenue),
+      todayEarnings: earnings(todayRevenue),
       revenue,
-      earnings: cut(revenue),
+      earnings: earnings(revenue),
       nigeriaTodayRevenue,
       nigeriaTodaySales: nigeriaTodayPayments.length,
-      nigeriaTodayCut: cut(nigeriaTodayRevenue),
+      nigeriaTodayEarnings: earnings(nigeriaTodayRevenue),
       nigeriaRevenue,
-      nigeriaEarnings: cut(nigeriaRevenue),
+      nigeriaEarnings: earnings(nigeriaRevenue),
       days,
       nigeriaDays,
       referrals,
