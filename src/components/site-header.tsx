@@ -42,7 +42,7 @@ export const SiteHeader = memo(function SiteHeader() {
       <Link to="/" className="flex min-w-0 flex-1 items-center gap-2 text-white no-underline">
         <AviatorBrandMark className="brand-mark header-plane-mark" />
         <span className="truncate text-sm leading-none font-black tracking-tight italic sm:text-base">
-          CASINO <span className="text-red">ROOM</span>
+          CASINO <span className="text-gold">ROOM</span>
         </span>
       </Link>
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
@@ -71,7 +71,7 @@ export const SiteHeader = memo(function SiteHeader() {
             ) : (
               <Link
                 to="/register"
-                className="inline-flex h-9 items-center justify-center rounded-full bg-red px-3 text-xs font-bold text-white no-underline sm:h-10 sm:px-4 sm:text-sm"
+                className="inline-flex h-9 items-center justify-center rounded-full bg-gold px-3 text-xs font-bold text-black no-underline sm:h-10 sm:px-4 sm:text-sm"
               >
                 Sign Up
               </Link>

@@ -142,7 +142,7 @@ function Home() {
         <h1 className="casino-title text-[2.35rem] leading-tight font-black tracking-tight">
           <span>CASINO</span> <span className="casino-title-accent">ROOM</span>
         </h1>
-        <p className="hero-description-float mt-5 rounded-r-xl border-l-2 border-red bg-black/35 px-4 py-3 text-left text-base leading-7 text-white/85 shadow-[0_8px_30px_rgba(0,0,0,0.18)] sm:text-lg sm:leading-8">
+        <p className="hero-description-float mt-5 rounded-r-xl border-l-2 border-gold bg-black/35 px-4 py-3 text-left text-base leading-7 text-white/85 shadow-[0_8px_30px_rgba(0,0,0,0.18)] sm:text-lg sm:leading-8">
           Our system tracks live Aviator signals, decodes multiplier patterns, and delivers precise
           cash-out opportunities before the round finishes
         </p>
@@ -155,7 +155,7 @@ function Home() {
           <button
             type="button"
             onClick={() => void openAccount()}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-red px-5 text-sm font-extrabold tracking-wide text-white"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gold px-5 text-sm font-extrabold tracking-wide text-black"
           >
             GET STARTED
             <Sparkles className="size-4" aria-hidden />
@@ -168,10 +168,10 @@ function Home() {
       <main id="desk" className="page-wrap">
         <div className="desk-layout">
         <article className="predictor-card overflow-hidden rounded-3xl">
-          <div className="relative aspect-[16/10] overflow-hidden bg-[#12081f]">
+          <div className="relative aspect-[16/10] overflow-hidden bg-[#101a28]">
             <AviatorBoard />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-            <div className="absolute bottom-3 left-3 inline-flex items-center gap-2 rounded-full border border-red/50 bg-black/60 px-3 py-1.5 text-xs font-extrabold tracking-wide text-white">
+            <div className="absolute bottom-3 left-3 inline-flex items-center gap-2 rounded-full border border-gold/50 bg-black/60 px-3 py-1.5 text-xs font-extrabold tracking-wide text-white">
               <span className="live-dot live-board-dot size-2.5 rounded-full bg-red" />
               LIVE BOARD
             </div>
@@ -194,7 +194,7 @@ function Home() {
             <button
               type="button"
               onClick={() => void openAccount()}
-              className="predictor-cta buy-pulse mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-red text-base font-extrabold text-white"
+              className="predictor-cta buy-pulse mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gold text-base font-extrabold text-black"
             >
               <span>Start Now</span>
               <ArrowRight className="size-4" aria-hidden />
@@ -202,11 +202,11 @@ function Home() {
           </div>
         </article>
 
-        <section className="relative mt-6 overflow-hidden rounded-3xl border border-red/20 bg-gradient-to-br from-[#1a0b0b] via-[#100707] to-black p-4 shadow-[0_20px_60px_rgba(0,0,0,0.3)] sm:p-5">
-          <div className="pointer-events-none absolute -right-12 -top-16 size-48 rounded-full bg-red/10 blur-3xl" />
+        <section className="relative mt-6 overflow-hidden rounded-3xl border border-gold/20 bg-gradient-to-br from-[#151a16] via-[#0d120f] to-black p-4 shadow-[0_20px_60px_rgba(0,0,0,0.3)] sm:p-5">
+          <div className="pointer-events-none absolute -right-12 -top-16 size-48 rounded-full bg-gold/10 blur-3xl" />
           <div className="relative mb-5 flex items-center justify-between gap-3">
             <div>
-              <p className="text-[10px] font-extrabold tracking-[0.22em] text-red uppercase">Live signals</p>
+              <p className="text-[10px] font-extrabold tracking-[0.22em] text-gold uppercase">Live signals</p>
               <h2 className="mt-1 text-lg font-black tracking-tight text-white">Prediction feed</h2>
               <p className="mt-1 text-xs text-white/50">Recent round cash-out windows</p>
             </div>
@@ -219,9 +219,9 @@ function Home() {
             {rows.map((row, index) => (
               <li
                 key={row.n}
-                className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.035] px-3 py-3 transition-colors hover:border-red/25 hover:bg-white/[0.06] sm:px-4"
+                className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.035] px-3 py-3 transition-colors hover:border-gold/25 hover:bg-white/[0.06] sm:px-4"
               >
-                <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-red/20 bg-red/10 text-xs font-black tabular-nums text-red">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-gold/20 bg-gold/10 text-xs font-black tabular-nums text-gold">
                   {String(index + 1).padStart(2, "0")}
                 </span>
                 <span className="min-w-0 flex-1">

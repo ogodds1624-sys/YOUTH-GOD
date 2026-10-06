@@ -108,22 +108,22 @@ export const AviatorBoard = memo(function AviatorBoard() {
       height="225"
       preserveAspectRatio="none"
       className="block h-full w-full"
-      style={{ backgroundColor: "#12081f" }}
+      style={{ backgroundColor: "#101a28" }}
       role="img"
       aria-label="Live Aviator odds"
     >
       <defs>
         <linearGradient id={rayId} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#3b1d73" />
-          <stop offset="55%" stopColor="#1a0d33" />
-          <stop offset="100%" stopColor="#0b0614" />
+          <stop offset="0%" stopColor="#22344f" />
+          <stop offset="55%" stopColor="#15243a" />
+          <stop offset="100%" stopColor="#0b111b" />
         </linearGradient>
         <linearGradient id={fillId} x1="0" y1="1" x2="0" y2="0">
           <stop offset="0%" stopColor="#ff2a2a" stopOpacity="0.95" />
           <stop offset="100%" stopColor="#ff5a6a" stopOpacity="0.35" />
         </linearGradient>
       </defs>
-      <rect width="360" height="225" fill="#1a0d33" />
+      <rect width="360" height="225" fill="#15243a" />
       <rect width="360" height="225" fill={`url(#${rayId})`} />
       {Array.from({ length: 14 }).map((_, i) => (
         <line

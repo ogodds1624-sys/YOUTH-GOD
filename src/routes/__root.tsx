@@ -172,7 +172,7 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: APP_NAME },
       { name: "description", content: "Create a CASINO account and open the live desk." },
-      { name: "theme-color", content: "#e23b3b" },
+      { name: "theme-color", content: "#edbd5b" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
