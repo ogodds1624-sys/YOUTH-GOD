@@ -17,9 +17,10 @@ the deployment platform before using the admin panel.
 
 ## Partner payouts
 
-Approved partners can request a payout in GHS or NGN and provide a bank or
-mobile-money provider, account name, and account number in the partner dashboard.
-Requests are limited to available net earnings after commission and previous
-pending or paid payouts. Admins review requests under **Partner Payouts** and
-mark them paid or rejected; rejected requests return to the partner's available
-balance.
+Approved partners can request a payout in GHS or NGN for confirmed payments
+from the previous local calendar day (Ghana time for GHS and Nigeria time for
+NGN). The available amount is net of the partner's commission and any pending
+or paid payout for that settlement day. Partners provide a bank or mobile-money
+provider, account name, and account number in the partner dashboard. Admins
+review requests under **Partner Payouts** and mark them paid or rejected;
+rejected requests release that day's earnings.

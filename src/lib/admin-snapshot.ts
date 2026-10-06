@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { adminAuthMiddleware } from "@/lib/admin-auth";
 import type { Sql } from "@/lib/db";
 import { isNairaAmount } from "@/lib/desk-session";
-import { availablePartnerEarnings, partnerEarnings } from "@/lib/partner-earnings";
+import { availablePartnerEarnings, partnerEarnings, previousSettlementDate, settlementGross } from "@/lib/partner-earnings";
 
 export type AdminMember = {
   id: string;
@@ -51,6 +51,7 @@ export type PartnerPayout = {
   institution: string;
   accountName: string;
   accountNumber: string;
+  earningDate: string;
   status: "pending" | "paid" | "rejected";
   requestedAt: string;
 };
@@ -292,10 +293,12 @@ async function ensurePayments(sql: Sql) {
         institution text not null,
         account_name text not null,
         account_number text not null,
+        earning_date text not null default '',
         status text not null default 'pending' check (status in ('pending', 'paid', 'rejected')),
         requested_at timestamptz not null default now()
       )
     `;
+    await sql`alter table partner_payouts add column if not exists earning_date text not null default ''`;
     await sql`alter table partner_payouts add column if not exists partner_name text not null default ''`;
     await sql`alter table partner_payouts add column if not exists partner_email text not null default ''`;
     await sql`
@@ -304,9 +307,11 @@ async function ensurePayments(sql: Sql) {
       from partners partner
       where payout.partner_id = partner.id and (payout.partner_name = '' or payout.partner_email = '')
     `;
+    await sql`update partner_payouts set earning_date = 'legacy-' || id where earning_date = ''`;
+    await sql`drop index if exists partner_payouts_one_pending_per_currency`;
     await sql`
-      create unique index if not exists partner_payouts_one_pending_per_currency
-      on partner_payouts (partner_id, currency) where status = 'pending'
+      create unique index if not exists partner_payouts_one_settlement
+      on partner_payouts (partner_id, currency, earning_date) where status in ('pending', 'paid')
     `;
     await sql`
       insert into partner_logins (email, partner_id, name, password_hash, code, approved_at)
@@ -595,15 +600,16 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
     institution: string;
     account_name: string;
     account_number: string;
+    earning_date: string;
     status: string;
     requested_at: string | Date;
   }>`
     select payout.id, payout.partner_id, coalesce(nullif(partner.name, ''), payout.partner_name) as partner_name,
       coalesce(nullif(partner.email, ''), payout.partner_email) as partner_email,
       payout.amount, payout.currency, payout.account_type, payout.institution, payout.account_name,
-      payout.account_number, payout.status, payout.requested_at
+      payout.account_number, payout.earning_date, payout.status, payout.requested_at
     from partner_payouts payout
-    join partners partner on partner.id = payout.partner_id
+    left join partners partner on partner.id = payout.partner_id
     order by payout.requested_at desc
   `;
   const payouts: PartnerPayout[] = payoutRows.map((row) => {
@@ -619,6 +625,7 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
       institution: row.institution,
       accountName: row.account_name,
       accountNumber: row.account_number,
+      earningDate: row.earning_date,
       status: row.status === "paid" || row.status === "rejected" ? row.status : "pending",
       requestedAt: Number.isNaN(requestedAt.getTime()) ? "" : requestedAt.toISOString(),
     };
@@ -1500,10 +1507,11 @@ export const getPartnerPortal = createServerFn({ method: "POST" })
       institution: string;
       account_name: string;
       account_number: string;
+      earning_date: string;
       status: string;
       requested_at: string | Date;
     }>`
-      select id, amount, currency, account_type, institution, account_name, account_number, status, requested_at
+      select id, amount, currency, account_type, institution, account_name, account_number, earning_date, status, requested_at
       from partner_payouts where partner_id = ${partner.id} order by requested_at desc
     `;
     const payouts: PartnerPayout[] = payoutRows.map((row) => {
@@ -1519,18 +1527,30 @@ export const getPartnerPortal = createServerFn({ method: "POST" })
         institution: row.institution,
         accountName: row.account_name,
         accountNumber: row.account_number,
+        earningDate: row.earning_date,
         status: row.status === "paid" || row.status === "rejected" ? row.status : "pending",
         requestedAt: Number.isNaN(requestedAt.getTime()) ? "" : requestedAt.toISOString(),
       };
     });
+    const payoutNow = new Date();
+    const ghanaYesterday = previousSettlementDate(payoutNow, GHANA_TZ);
+    const nigeriaYesterday = previousSettlementDate(payoutNow, NIGERIA_TZ);
+    const yesterdayGhanaGross = settlementGross(
+      ghanaPayments.map((row) => ({ amount: row.amount, date: dayKeyInZone(row.created_at, GHANA_TZ) })),
+      ghanaYesterday,
+    );
+    const yesterdayNigeriaGross = settlementGross(
+      nigeriaPayments.map((row) => ({ amount: row.amount, date: dayKeyInZone(row.created_at, NIGERIA_TZ) })),
+      nigeriaYesterday,
+    );
     const reservedGhs = payouts
-      .filter((payout) => payout.currency === "GHS" && payout.status !== "rejected")
+      .filter((payout) => payout.currency === "GHS" && payout.earningDate === ghanaYesterday && payout.status !== "rejected")
       .reduce((sum, payout) => sum + payout.amount, 0);
     const reservedNgn = payouts
-      .filter((payout) => payout.currency === "NGN" && payout.status !== "rejected")
+      .filter((payout) => payout.currency === "NGN" && payout.earningDate === nigeriaYesterday && payout.status !== "rejected")
       .reduce((sum, payout) => sum + payout.amount, 0);
-    const availableGhs = availablePartnerEarnings(revenue, commission, reservedGhs);
-    const availableNgn = availablePartnerEarnings(nigeriaRevenue, commission, reservedNgn);
+    const availableGhs = availablePartnerEarnings(yesterdayGhanaGross, commission, reservedGhs);
+    const availableNgn = availablePartnerEarnings(yesterdayNigeriaGross, commission, reservedNgn);
     const now = new Date();
     const ghanaToday = dayKeyInZone(now, GHANA_TZ);
     const nigeriaToday = dayKeyInZone(now, NIGERIA_TZ);
@@ -1671,26 +1691,30 @@ export const requestPartnerPayout = createServerFn({ method: "POST" })
     if (!partner || partner.status !== "approved") throw new Error("Sign in again.");
     const commission = Number(partner.commission) || 0;
     const confirmed = await partnerConfirmedPayments(sql, partner.code.toLowerCase());
-    const gross = confirmed
+    const timeZone = data.currency === "NGN" ? NIGERIA_TZ : GHANA_TZ;
+    const earningDate = previousSettlementDate(new Date(), timeZone);
+    const eligiblePayments = confirmed
       .filter((row) => (data.currency === "NGN") === isNairaPayment(Number(row.amount), row.country))
-      .reduce((sum, row) => sum + Number(row.amount), 0);
+      .map((row) => ({ amount: row.amount, date: dayKeyInZone(row.created_at, timeZone) }));
+    const gross = settlementGross(eligiblePayments, earningDate);
     const reservedRows = await sql<{ reserved: number | string }>`
       select coalesce(sum(amount), 0) as reserved
       from partner_payouts
-      where partner_id = ${partner.id} and currency = ${data.currency} and status in ('pending', 'paid')
+      where partner_id = ${partner.id} and currency = ${data.currency}
+        and earning_date = ${earningDate} and status in ('pending', 'paid')
     `;
     const available = availablePartnerEarnings(gross, commission, Number(reservedRows[0]?.reserved ?? 0));
     if (data.amount > available) throw new Error("Payout amount exceeds your available earnings.");
     const inserted = await sql<{ id: string }>`
       insert into partner_payouts
-        (id, partner_id, partner_name, partner_email, amount, currency, account_type, institution, account_name, account_number)
+        (id, partner_id, partner_name, partner_email, amount, currency, account_type, institution, account_name, account_number, earning_date)
       values
         (${crypto.randomUUID()}, ${partner.id}, ${partner.name}, ${partner.email}, ${data.amount}, ${data.currency},
-          ${data.accountType}, ${data.institution}, ${data.accountName}, ${data.accountNumber})
-      on conflict (partner_id, currency) where status = 'pending' do nothing
+          ${data.accountType}, ${data.institution}, ${data.accountName}, ${data.accountNumber}, ${earningDate})
+      on conflict (partner_id, currency, earning_date) where status in ('pending', 'paid') do nothing
       returning id
     `;
-    if (inserted.length === 0) throw new Error("You already have a pending payout request in this currency.");
+    if (inserted.length === 0) throw new Error("Yesterday's earnings for this currency have already been requested or paid.");
     return { requested: true };
   });
 

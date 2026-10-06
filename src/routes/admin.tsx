@@ -1069,6 +1069,7 @@ function PartnerPayoutDesk({
                   <p><span className="text-[#8b95a7]">Bank/provider:</span> {payout.institution}</p>
                   <p><span className="text-[#8b95a7]">Account name:</span> {payout.accountName}</p>
                   <p><span className="text-[#8b95a7]">Account number:</span> {payout.accountNumber}</p>
+                  <p><span className="text-[#8b95a7]">Earnings date:</span> {payout.earningDate.startsWith("20") ? payout.earningDate : "Earlier request"}</p>
                   <p className="text-xs text-[#8b95a7]">
                     Requested {payout.requestedAt ? new Date(payout.requestedAt).toLocaleString() : "recently"}
                   </p>

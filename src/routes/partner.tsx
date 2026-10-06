@@ -504,11 +504,11 @@ function PayoutDesk({
       <div>
         <p className="text-xs font-extrabold tracking-[0.18em] text-red">PARTNER PAYOUTS</p>
         <h1 className="mt-3 text-2xl font-black tracking-tight">Request a payout</h1>
-        <p className="mt-1 text-sm text-[#8b95a7]">Request your available earnings and provide the account details where you want to receive payment.</p>
+        <p className="mt-1 text-sm text-[#8b95a7]">Request only earnings from yesterday's confirmed payments. Ghana and Nigeria balances use their local calendar days.</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Stat label="AVAILABLE · GHS" value={formatMoney(portal.availableGhs, "GHS")} note="Net earnings less pending and completed payouts." icon={<CircleDollarSign className="size-4" />} gold />
-        <Stat label="AVAILABLE · NGN" value={formatMoney(portal.availableNgn, "NGN")} note="Net earnings less pending and completed payouts." icon={<CircleDollarSign className="size-4" />} gold />
+        <Stat label="YESTERDAY AVAILABLE · GHS" value={formatMoney(portal.availableGhs, "GHS")} note="Yesterday's confirmed Ghana earnings after commission and previous payouts." icon={<CircleDollarSign className="size-4" />} gold />
+        <Stat label="YESTERDAY AVAILABLE · NGN" value={formatMoney(portal.availableNgn, "NGN")} note="Yesterday's confirmed Nigeria earnings after commission and previous payouts." icon={<CircleDollarSign className="size-4" />} gold />
       </div>
       <section className="rounded-3xl border border-white/10 bg-[#111111] px-5 py-5">
         <h2 className="text-lg font-black">Payout account</h2>
@@ -548,7 +548,7 @@ function PayoutDesk({
           <button type="submit" disabled={busy || available <= 0} className="h-12 w-fit rounded-xl bg-red px-5 text-sm font-extrabold tracking-wide text-white disabled:opacity-60 md:col-span-2">
             {busy ? "SUBMITTING…" : available <= 0 ? "NO AVAILABLE EARNINGS" : "REQUEST PAYOUT"}
           </button>
-          <p className="text-xs text-[#8b95a7] md:col-span-2">Only one pending request per currency is allowed. Pending and paid requests reduce your available balance; rejected requests do not.</p>
+          <p className="text-xs text-[#8b95a7] md:col-span-2">Only yesterday's confirmed payments are eligible. One request per currency and settlement day; pending or paid requests use that day's earnings, while rejected requests release them.</p>
         </form>
       </section>
       <section className="rounded-3xl border border-white/10 bg-[#111111] px-5 py-5">
@@ -562,7 +562,7 @@ function PayoutDesk({
                 <div>
                   <p className="font-extrabold">{formatMoney(payout.amount, payout.currency)}</p>
                   <p className="text-xs text-[#8b95a7]">
-                    {payout.accountType} · {payout.institution} · {payout.requestedAt ? new Date(payout.requestedAt).toLocaleDateString() : "recently"}
+                    {payout.earningDate.startsWith("20") ? `Earnings date ${payout.earningDate}` : "Earlier request"} · {payout.accountType} · {payout.institution} · {payout.requestedAt ? new Date(payout.requestedAt).toLocaleDateString() : "recently"}
                   </p>
                 </div>
                 <span className={payout.status === "paid" ? "pill-active" : payout.status === "pending" ? "pill-unpaid" : "text-xs font-bold text-red"}>
