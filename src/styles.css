@@ -228,11 +228,11 @@
 }
 
 .auth-card {
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(240, 193, 77, 0.2);
   background:
-    radial-gradient(ellipse at 100% 0%, rgba(240, 193, 77, 0.11), transparent 40%),
-    linear-gradient(145deg, rgba(20, 12, 13, 0.94), rgba(7, 12, 10, 0.96) 70%);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), 0 0 36px rgba(240, 193, 77, 0.1);
+    radial-gradient(ellipse at 100% 0%, rgba(240, 193, 77, 0.12), transparent 42%),
+    linear-gradient(145deg, rgba(17, 27, 21, 0.96), rgba(7, 12, 10, 0.97) 72%);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.48), 0 0 34px rgba(240, 193, 77, 0.07);
   backdrop-filter: blur(14px);
 }
 
