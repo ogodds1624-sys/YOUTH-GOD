@@ -22,16 +22,20 @@ const PACKAGES = [
   {
     price: 350,
     detail: "3 mins per session",
+    tier: "Quick session",
     icon: Zap,
   },
   {
     price: 800,
     detail: "10 mins per session",
+    tier: "Most popular",
     icon: Flame,
+    featured: true,
   },
   {
     price: 1700,
     detail: "20 mins per session",
+    tier: "Extended session",
     icon: Gem,
   },
 ];
@@ -91,7 +95,7 @@ function PackagesPage() {
 
   return (
     <main className="home-theme relative min-h-dvh overflow-hidden px-4 py-10 text-white">
-      <div className="relative z-10 mx-auto w-full max-w-md">
+      <div className="relative z-10 mx-auto w-full max-w-6xl">
         {alertOn ? (
           <div className="reject-banner mb-5 rounded-2xl border border-red bg-black/75 px-4 py-4 text-center" role="alert">
             <p className="text-sm font-extrabold tracking-wide text-red">PAYMENT REJECTED</p>
@@ -112,7 +116,7 @@ function PackagesPage() {
           Choose Your <span>Package</span>
         </h1>
         <p className="package-subtitle">
-          Buy session time · Use anytime
+          Choose your session length · Use anytime
         </p>
         {store && store.rates.length > 0 ? (
           <p className="mt-3 text-center text-xs leading-relaxed text-white/70">
@@ -120,16 +124,17 @@ function PackagesPage() {
             {store.rates.map((rate) => `${rate.country} ${rate.unit}${rate.perGhs} per GHS`).join(" · ")}
           </p>
         ) : null}
-        <div className="mt-6 space-y-4">
+        <div className="package-grid mt-8">
           {PACKAGES.map((pack, index) => {
             const Icon = pack.icon;
             return (
               <article
                 key={pack.price}
-                className="package-card"
+                className={"package-card" + (pack.featured ? " package-card-featured" : "")}
               >
                 <div className="package-card-top">
                   <div className="package-price-block">
+                    <p className="package-card-kicker">{pack.tier}</p>
                     <h2 className="package-price">
                       <span>GHS</span> {pack.price.toLocaleString("en-GH")}
                     </h2>
@@ -221,7 +226,7 @@ function PackagesPage() {
                   className="buy-pulse package-buy-button mt-4"
                 >
                   <span className="package-buy-copy">
-                    <strong>Unlock sessions</strong>
+                    <strong>Choose package</strong>
                   </span>
                   <span className="package-buy-arrow" aria-hidden="true">
                     <ArrowRight />
