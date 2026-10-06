@@ -122,6 +122,9 @@ const LOCAL_DEV_ORIGINS: string[] = [
   "http://localhost:8181",
   "http://127.0.0.1:8181",
   "http://[::1]:8181",
+  "http://localhost:8182",
+  "http://127.0.0.1:8182",
+  "http://[::1]:8182",
 ];
 function isPrivateIPv4(address: string): boolean {
   const octets = address.split(".").map(Number);
@@ -155,7 +158,7 @@ const localLanAddresses =
       ]
     : [];
 const localLanHosts = localLanAddresses.flatMap((address) =>
-  [8080, 8081, 8181].map((port) => `${address}:${port}`),
+  [8080, 8081, 8181, 8182].map((port) => `${address}:${port}`),
 );
 const localLanOrigins = localLanHosts.map((host) => `http://${host}`);
 // Custom domain in front of the Vercel app. BETTER_AUTH_URL is the *.vercel.app
