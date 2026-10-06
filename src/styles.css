@@ -657,44 +657,22 @@
 
 .package-buy-button {
   display: flex;
-  min-height: 4.25rem;
+  min-height: 3.75rem;
   width: 100%;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  overflow: hidden;
-  border: 1px solid rgba(240, 193, 77, 0.58);
-  border-radius: 1.15rem;
-  padding: 0.65rem 0.75rem 0.65rem 1rem;
-  background:
-    linear-gradient(110deg, rgba(240, 193, 77, 0.11), transparent 42%),
-    linear-gradient(115deg, #261b0c 0%, #17120c 56%, #0b0a09 100%);
-  color: #ffe08a;
+  border: 1px solid rgba(255, 231, 163, 0.9);
+  border-radius: 1rem;
+  padding: 0.5rem 0.55rem 0.5rem 1.1rem;
+  background: linear-gradient(115deg, #ffe28a 0%, #edbd5b 58%, #dca43e 100%);
+  color: #17130a;
   text-align: left;
-  box-shadow:
-    inset 0 1px rgba(255, 239, 194, 0.14),
-    0 9px 22px rgba(0, 0, 0, 0.34),
-    0 0 16px rgba(240, 193, 77, 0.08);
+  box-shadow: 0 7px 20px rgba(237, 189, 91, 0.16), inset 0 1px rgba(255, 255, 255, 0.58);
   transition:
-    border-color 180ms ease,
+    box-shadow 180ms ease,
     filter 180ms ease,
     transform 180ms ease;
-}
-
-.package-buy-button.buy-pulse {
-  animation: package-buy-glow 2.4s ease-in-out infinite;
-}
-
-.package-buy-button.buy-pulse::after {
-  background: linear-gradient(
-    108deg,
-    transparent 35%,
-    rgba(255, 232, 169, 0.04) 43%,
-    rgba(255, 232, 169, 0.24) 50%,
-    rgba(255, 232, 169, 0.04) 57%,
-    transparent 65%
-  );
-  animation: package-buy-sweep 3.6s ease-in-out infinite;
 }
 
 .package-buy-copy {
@@ -712,10 +690,10 @@
 }
 
 .package-buy-copy strong {
-  color: #ffe08a;
-  font-size: 1rem;
+  color: #17130a;
+  font-size: 0.88rem;
   font-weight: 900;
-  letter-spacing: 0.045em;
+  letter-spacing: 0.015em;
   line-height: 1.25;
 }
 
@@ -725,13 +703,11 @@
   height: 2.8rem;
   flex: none;
   place-items: center;
-  border: 1px solid rgba(255, 240, 218, 0.42);
+  border: 1px solid rgba(255, 232, 169, 0.28);
   border-radius: 50%;
-  background: linear-gradient(145deg, #f5d68a, #d9a83e);
-  color: #57191c;
-  box-shadow:
-    inset 0 1px rgba(255, 255, 255, 0.42),
-    0 3px 10px rgba(66, 12, 14, 0.24);
+  background: #17130a;
+  color: #ffe08a;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.12), 0 3px 9px rgba(50, 31, 6, 0.2);
   transition:
     background 180ms ease,
     color 180ms ease,
@@ -745,15 +721,18 @@
 }
 
 .package-buy-button:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 220, 134, 0.9);
-  filter: brightness(1.07);
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: 0 10px 26px rgba(237, 189, 91, 0.25), inset 0 1px rgba(255, 255, 255, 0.7);
 }
 
 .package-buy-button:hover .package-buy-arrow {
-  transform: translateX(2px);
-  background: #fff0bd;
-  color: #4e3208;
+  transform: translateX(3px);
+  background: #2c2515;
+}
+
+.package-buy-button:active {
+  transform: translateY(0);
 }
 
 .package-buy-button:focus-visible {
@@ -763,6 +742,10 @@
 
 .package-buy-button:disabled {
   cursor: not-allowed;
+}
+
+.package-buy-button:not(:disabled) {
+  animation: none;
 }
 
 @media (min-width: 900px) {

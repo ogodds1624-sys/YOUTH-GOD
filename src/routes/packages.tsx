@@ -125,7 +125,7 @@ function PackagesPage() {
           </p>
         ) : null}
         <div className="package-grid mt-8">
-          {PACKAGES.map((pack, index) => {
+          {PACKAGES.map((pack) => {
             const Icon = pack.icon;
             return (
               <article
@@ -222,11 +222,10 @@ function PackagesPage() {
                   onClick={() =>
                     void navigate({ to: "/pay", search: { amount: pack.price } })
                   }
-                  style={{ animationDelay: `${index * 0.2}s` }}
-                  className="buy-pulse package-buy-button mt-4"
+                  className="package-buy-button"
                 >
                   <span className="package-buy-copy">
-                    <strong>Choose package</strong>
+                    <strong>Continue to checkout</strong>
                   </span>
                   <span className="package-buy-arrow" aria-hidden="true">
                     <ArrowRight />
