@@ -335,14 +335,14 @@ function AdminPage() {
             <Lock className="size-7 text-gold" aria-hidden />
           </div>
           <h1 className="mt-5 text-3xl font-black tracking-tight">Admin Access</h1>
-          <p className="mt-2 text-sm font-semibold text-[#9aa3b2]">Enter your admin passphrase.</p>
+          <p className="mt-2 text-sm font-semibold text-[#9aa3b2]">Enter your admin passcode.</p>
           {loginError || denied ? (
             <p className="mt-5 rounded-2xl border border-red/40 bg-red/15 px-4 py-3 text-sm font-bold text-red">
-              {loginError || "Wrong passphrase."}
+              {loginError || "Wrong passcode."}
             </p>
           ) : null}
           <label htmlFor="admin-pass" className="sr-only">
-            Passphrase
+            Passcode
           </label>
           <div className={"mt-5 flex h-14 items-center rounded-2xl border bg-ink px-4 " + (denied ? "border-red" : "border-white/15 focus-within:border-red")}>
             <input
@@ -362,7 +362,7 @@ function AdminPage() {
               spellCheck={false}
               readOnly
               onFocus={(event) => event.currentTarget.removeAttribute("readonly")}
-              placeholder="Passphrase"
+              placeholder="Passcode"
               className="h-full min-w-0 flex-1 bg-transparent text-left text-base tracking-[0.2em] text-white outline-none placeholder:tracking-normal placeholder:text-[#8b95a7]"
             />
             <button

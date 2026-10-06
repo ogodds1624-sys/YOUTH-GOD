@@ -715,7 +715,7 @@ export const getAdminSnapshot = createServerFn({ method: "GET" })
 export const verifyAdminPasscode = createServerFn({ method: "POST" })
   .inputValidator((data: { passcode: string }) => {
     const passcode = typeof data?.passcode === "string" ? data.passcode.slice(0, 256) : "";
-    if (!passcode.trim()) throw new Error("Enter your admin passphrase.");
+    if (!passcode.trim()) throw new Error("Enter your admin passcode.");
     return { passcode };
   })
   .handler(async ({ data }) => {
