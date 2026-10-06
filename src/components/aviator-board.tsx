@@ -37,8 +37,8 @@ export const AviatorBoard = memo(function AviatorBoard() {
 
   useEffect(() => {
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const roundDuration = 42000;
-    const finishPause = 1800;
+    const roundDuration = 24000;
+    const finishPause = 2200;
     let visible = true;
     let elapsed = 0;
     let lastFrame = performance.now();
@@ -76,7 +76,7 @@ export const AviatorBoard = memo(function AviatorBoard() {
         paint(1);
       } else {
         const linearProgress = roundTime / roundDuration;
-        const progress = 0.5 - Math.cos(Math.PI * linearProgress) / 2;
+        const progress = 1 - Math.pow(1 - linearProgress, 2.2);
         paint(progress);
       }
     };
@@ -128,12 +128,12 @@ export const AviatorBoard = memo(function AviatorBoard() {
       {Array.from({ length: 14 }).map((_, i) => (
         <line
           key={i}
-          x1="0"
-          y1={20 + i * 28}
-          x2="360"
-          y2={-40 + i * 18}
-          stroke="rgba(255,255,255,0.06)"
-          strokeWidth="18"
+          x1="36"
+          y1="222"
+          x2={-260 + i * 52}
+          y2="-120"
+          stroke="rgba(255,255,255,0.075)"
+          strokeWidth="22"
         />
       ))}
       <g>

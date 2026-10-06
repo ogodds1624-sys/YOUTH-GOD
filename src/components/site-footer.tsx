@@ -137,7 +137,7 @@ export const SiteFooter = memo(function SiteFooter() {
         <section>
           <Link to="/" className="inline-flex items-center gap-2 text-white no-underline">
             <span className="text-base font-black tracking-tight italic">
-              CASINO <span className="text-red">ROOM</span>
+              CASINO <span className="text-gold">WORLD</span>
             </span>
           </Link>
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-[#8b95a7]">
@@ -177,7 +177,7 @@ export const SiteFooter = memo(function SiteFooter() {
         </section>
       </div>
       <div className="border-t border-white/10 px-4 py-4 text-center text-xs text-[#8b95a7]">
-        Casino Room · Predictions for the live desk
+        Casino World · Predictions for the live desk
       </div>
         </footer>
       </div>

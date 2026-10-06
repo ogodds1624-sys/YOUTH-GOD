@@ -238,7 +238,7 @@ export function AccountLanding({ mode }: { mode: Mode }) {
         </Link>
         <div className="mt-3 mb-5 flex items-center justify-center gap-2.5">
           <AviatorBrandMark className="header-plane-mark auth-plane-mark" />
-          <span className="text-xl font-extrabold tracking-tight">CASINO</span>
+          <span className="text-xl font-extrabold tracking-tight">CASINO WORLD</span>
         </div>
         <h1 className={`auth-heading text-center${register ? " auth-heading-register" : ""}`}>
           {register ? "Create your account" : "Welcome back"}

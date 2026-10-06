@@ -11,7 +11,7 @@ import { PendingPaymentWatcher } from "@/components/pending-payment-watcher";
 import { SupportChat } from "@/components/support-chat";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "CASINO";
+const APP_NAME = "CASINO WORLD";
 
 const PRESSABLE = "button, a, input, textarea, select, option, label, summary, [role='button'], [role='link']";
 
@@ -171,7 +171,7 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: APP_NAME },
-      { name: "description", content: "Create a CASINO account and open the live desk." },
+      { name: "description", content: "Create a Casino World account and open the live desk." },
       { name: "theme-color", content: "#edbd5b" },
     ],
     links: [

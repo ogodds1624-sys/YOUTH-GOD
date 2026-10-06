@@ -1,6 +1,5 @@
 import { memo, useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { AviatorBrandMark } from "@/components/aviator-brand-mark";
 import { UserButton } from "@/lib/auth/gates";
 import { getSportyLink } from "@/lib/admin-snapshot";
 import { signOut } from "@/lib/auth/client";
@@ -40,9 +39,8 @@ export const SiteHeader = memo(function SiteHeader() {
   return (
     <header className="site-header sticky top-0 z-40 bg-ink">
       <Link to="/" className="flex min-w-0 flex-1 items-center gap-2 text-white no-underline">
-        <AviatorBrandMark className="brand-mark header-plane-mark" />
         <span className="truncate text-sm leading-none font-black tracking-tight italic sm:text-base">
-          CASINO <span className="text-gold">ROOM</span>
+          CASINO <span className="text-gold">WORLD</span>
         </span>
       </Link>
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
@@ -56,7 +54,7 @@ export const SiteHeader = memo(function SiteHeader() {
           <>
             <Link
               to="/login"
-              className="inline-flex h-9 items-center justify-center rounded-full border border-white/30 px-3 text-xs font-bold text-white no-underline sm:h-10 sm:px-4 sm:text-sm"
+              className="inline-flex h-9 items-center justify-center rounded-full border border-gold/50 px-3 text-xs font-bold tracking-wide text-white no-underline transition-colors hover:bg-gold/10 sm:h-10 sm:px-4 sm:text-sm"
             >
               Sign In
             </Link>
@@ -64,14 +62,14 @@ export const SiteHeader = memo(function SiteHeader() {
               <button
                 type="button"
                 onClick={() => void signOut("/")}
-                className="inline-flex h-9 items-center justify-center rounded-full bg-red px-3 text-xs font-bold text-white sm:h-10 sm:px-4 sm:text-sm"
+                className="inline-flex h-9 items-center justify-center rounded-full bg-gold px-3 text-xs font-bold tracking-wide text-black transition-colors hover:bg-gold/90 sm:h-10 sm:px-4 sm:text-sm"
               >
                 Sign Out
               </button>
             ) : (
               <Link
                 to="/register"
-                className="inline-flex h-9 items-center justify-center rounded-full bg-gold px-3 text-xs font-bold text-black no-underline sm:h-10 sm:px-4 sm:text-sm"
+                className="inline-flex h-9 items-center justify-center rounded-full bg-gold px-3 text-xs font-bold tracking-wide text-black no-underline transition-colors hover:bg-gold/90 sm:h-10 sm:px-4 sm:text-sm"
               >
                 Sign Up
               </Link>

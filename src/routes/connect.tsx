@@ -132,7 +132,7 @@ function ConnectPage() {
           Connect your SportyBet
         </h1>
         <p className="mt-3 text-center text-base leading-relaxed text-muted">
-          Enter your SportyBet account number to link it to Casino Room.
+          Enter your SportyBet account number to link it to Casino World.
         </p>
         <div className="my-8 flex justify-center">
           <span className="grid size-20 place-items-center rounded-[22px] bg-red text-5xl font-black text-white">

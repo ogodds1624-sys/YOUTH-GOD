@@ -696,12 +696,458 @@
   width: 100%;
 }
 
+.home-cta-primary {
+  box-shadow: 0 10px 28px rgba(240, 193, 77, 0.2);
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.home-cta-primary:hover {
+  transform: translateY(-2px);
+  background-color: #f7d477;
+  box-shadow: 0 14px 34px rgba(240, 193, 77, 0.28);
+}
+
+.home-cta-secondary {
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.home-cta-secondary:hover {
+  transform: translateY(-2px);
+  border-color: rgba(240, 193, 77, 0.8);
+  box-shadow: 0 10px 28px rgba(240, 193, 77, 0.1);
+}
+
 .phone-frame {
   position: relative;
   width: 100%;
   max-width: 22rem;
   margin: 2.5rem auto 0;
   padding-inline: 1.5rem;
+}
+
+.iphone-stage {
+  display: grid;
+  min-height: 47rem;
+  place-items: center;
+  overflow: hidden;
+  padding: 2.5rem 1rem;
+  background:
+    radial-gradient(ellipse at 50% 44%, rgba(240, 193, 77, 0.13), transparent 47%),
+    linear-gradient(160deg, #0c110e, #080b09 72%);
+}
+
+.iphone-device {
+  position: relative;
+  width: min(100%, 22rem);
+  border: 1px solid #727575;
+  border-radius: 3.15rem;
+  padding: 0.48rem;
+  background:
+    linear-gradient(118deg, #f0f1ec 0%, #777c7e 5%, #24282a 12%, #55595b 45%, #171a1b 83%, #a4a5a0 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.48),
+    inset 0 0 0 3px rgba(18, 20, 21, 0.92),
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 28px 55px rgba(0, 0, 0, 0.66),
+    0 0 38px rgba(240, 193, 77, 0.1);
+}
+
+.iphone-device::before {
+  position: absolute;
+  z-index: 2;
+  inset: 0.27rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 2.9rem;
+  content: "";
+  pointer-events: none;
+}
+
+.iphone-side-button {
+  position: absolute;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+  background: linear-gradient(90deg, #d5d5d0, #45494a 70%);
+  box-shadow: -1px 0 2px rgba(255, 255, 255, 0.18);
+}
+
+.iphone-side-button-action {
+  top: 6rem;
+  left: -4px;
+  height: 2.25rem;
+}
+
+.iphone-side-button-volume-up,
+.iphone-side-button-volume-down {
+  left: -4px;
+  height: 3rem;
+}
+
+.iphone-side-button-volume-up {
+  top: 10rem;
+}
+
+.iphone-side-button-volume-down {
+  top: 13.7rem;
+}
+
+.iphone-side-button-power {
+  top: 10rem;
+  right: -4px;
+  height: 4.2rem;
+  border-radius: 0 3px 3px 0;
+}
+
+.iphone-screen {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #050606;
+  border-radius: 2.72rem;
+  padding: 0.75rem 0.65rem 0.4rem;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(26, 46, 35, 0.62), transparent 42%),
+    #080c0a;
+}
+
+.iphone-statusbar {
+  position: relative;
+  display: flex;
+  height: 2.2rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.72rem;
+  color: #f7f7f4;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.015em;
+}
+
+.iphone-dynamic-island {
+  position: absolute;
+  top: 0.24rem;
+  left: 50%;
+  width: 5.7rem;
+  height: 1.45rem;
+  transform: translateX(-50%);
+  border: 1px solid #17191a;
+  border-radius: 999px;
+  background: #020303;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.08);
+}
+
+.iphone-dynamic-island::after {
+  position: absolute;
+  top: 0.42rem;
+  right: 0.68rem;
+  width: 0.36rem;
+  height: 0.36rem;
+  border: 1px solid rgba(91, 130, 166, 0.45);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #536b83, #101519 72%);
+  content: "";
+}
+
+.iphone-status-icons {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.iphone-signal {
+  display: flex;
+  height: 0.8rem;
+  align-items: end;
+  gap: 2px;
+}
+
+.iphone-signal i {
+  width: 3px;
+  border-radius: 2px;
+  background: #f5f5f2;
+}
+
+.iphone-signal i:nth-child(1) { height: 0.28rem; }
+.iphone-signal i:nth-child(2) { height: 0.42rem; }
+.iphone-signal i:nth-child(3) { height: 0.57rem; }
+.iphone-signal i:nth-child(4) { height: 0.72rem; }
+
+.iphone-wifi {
+  width: 0.8rem;
+  height: 0.55rem;
+  border: 2px solid #f5f5f2;
+  border-bottom-color: transparent;
+  border-radius: 0.8rem 0.8rem 0 0;
+  transform: translateY(0.1rem);
+}
+
+.iphone-battery {
+  position: relative;
+  width: 1.15rem;
+  height: 0.55rem;
+  border: 1px solid rgba(245, 245, 242, 0.85);
+  border-radius: 0.15rem;
+  padding: 2px;
+}
+
+.iphone-battery::after {
+  position: absolute;
+  top: 0.12rem;
+  right: -3px;
+  width: 2px;
+  height: 0.2rem;
+  border-radius: 0 2px 2px 0;
+  background: #f5f5f2;
+  content: "";
+}
+
+.iphone-battery i {
+  display: block;
+  width: 78%;
+  height: 100%;
+  border-radius: 1px;
+  background: #f5f5f2;
+}
+
+.iphone-appbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.55rem 0.72rem;
+}
+
+.iphone-app-title {
+  color: #f4f5f1;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+}
+
+.iphone-app-title b {
+  color: var(--color-gold);
+}
+
+.iphone-live-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid rgba(240, 193, 77, 0.28);
+  border-radius: 999px;
+  padding: 0.24rem 0.42rem;
+  color: #edcb7c;
+  font-size: 0.52rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.iphone-live-label i {
+  width: 0.32rem;
+  height: 0.32rem;
+  border-radius: 50%;
+  background: #79d999;
+  box-shadow: 0 0 7px rgba(121, 217, 153, 0.6);
+}
+
+.iphone-chart {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1.58;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.65rem;
+  background: #101a28;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.iphone-player-count {
+  position: absolute;
+  right: 0.4rem;
+  bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  padding: 0.28rem 0.55rem 0.28rem 0.28rem;
+  background: rgba(12, 13, 14, 0.88);
+  color: #f4f4f4;
+  font-size: 0.8rem;
+  font-weight: 700;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.iphone-player-coins {
+  display: flex;
+  margin-right: 0.15rem;
+}
+
+.iphone-player-coins i {
+  display: grid;
+  width: 1.6rem;
+  height: 1.6rem;
+  place-items: center;
+  border: 2px solid #151719;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff28b, #44b94a 52%, #187c38);
+  color: #fff;
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 950;
+  text-shadow: 0 1px 2px #253;
+}
+
+.iphone-player-coins i + i {
+  margin-left: -0.55rem;
+  background: radial-gradient(circle at 35% 30%, #ffb4c7, #e63d71 56%, #8e1747);
+}
+
+.iphone-bet-panel {
+  margin-top: 0.45rem;
+  border: 1px solid rgba(255, 255, 255, 0.025);
+  border-radius: 1.55rem;
+  padding: 0.52rem;
+  background: #1d1d1f;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.iphone-bet-tabs {
+  display: grid;
+  width: 72%;
+  height: 2.45rem;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  margin: 0 auto 0.55rem;
+  border-radius: 999px;
+  padding: 0.2rem;
+  background: #141416;
+  color: #a6a6a8;
+  font-size: 0.77rem;
+  text-align: center;
+}
+
+.iphone-bet-tabs span:first-child {
+  display: grid;
+  height: 100%;
+  place-items: center;
+  border-radius: 999px;
+  background: #303033;
+  color: #f4f4f4;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.iphone-bet-row {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  align-items: stretch;
+  gap: 0.52rem;
+}
+
+.iphone-stake-controls {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: 2.55rem 1fr;
+  gap: 0.32rem;
+}
+
+.iphone-stake-stepper {
+  display: grid;
+  grid-template-columns: 2.15rem minmax(0, 1fr) 2.15rem;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.18rem;
+  background: #151517;
+  color: #d7d7d9;
+  text-align: center;
+}
+
+.iphone-stake-stepper span {
+  display: grid;
+  width: 1.85rem;
+  height: 1.85rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #303033;
+  color: #bfc0c2;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.iphone-stake-stepper strong {
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.iphone-stake-presets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.25rem;
+}
+
+.iphone-stake-presets span {
+  display: grid;
+  min-height: 1.45rem;
+  place-items: center;
+  border-radius: 999px;
+  background: #151517;
+  color: #aaa9ac;
+  font-size: 0.7rem;
+  font-weight: 650;
+}
+
+.iphone-bet-button {
+  position: relative;
+  display: flex;
+  min-height: 6.15rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(202, 255, 191, 0.9);
+  border-radius: 1.3rem;
+  background: linear-gradient(145deg, #32bd08, #20a900);
+  color: white;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.28),
+    0 2px 8px rgba(0, 0, 0, 0.2);
+  font-size: 1.42rem;
+  line-height: 1.2;
+}
+
+.iphone-bet-button strong {
+  margin-top: 0.12rem;
+  font-weight: 500;
+}
+
+.iphone-bet-button small {
+  font-size: 0.72em;
+}
+
+.iphone-bet-panel-icon {
+  position: absolute;
+  top: 0.36rem;
+  right: 0.38rem;
+  width: 1.45rem;
+  height: 1.45rem;
+  padding: 0.2rem;
+  border-radius: 50%;
+  background: #29292c;
+  color: #bfc0c2;
+}
+
+.iphone-home-indicator {
+  display: grid;
+  height: 1.1rem;
+  place-items: end center;
+}
+
+.iphone-home-indicator i {
+  width: 4.5rem;
+  height: 0.2rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
 }
 
 .page-wrap {
@@ -845,6 +1291,11 @@
 
   .phone-frame {
     margin-top: 0;
+  }
+
+  .iphone-stage {
+    min-height: 47rem;
+    padding-block: 3rem;
   }
 
   .page-wrap {

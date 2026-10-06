@@ -219,7 +219,7 @@ function NigeriaPayPage() {
             </span>
             <span>Back home</span>
           </Link>
-          <p className="package-kicker">Casino Room <span aria-hidden="true">/</span> Session Menu</p>
+          <p className="package-kicker">Casino World <span aria-hidden="true">/</span> Session Menu</p>
           <h1 className="package-title">
             Choose Your <span>Package</span>
           </h1>

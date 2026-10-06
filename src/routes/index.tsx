@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, Plane, Sparkles } from "lucide-react";
+import { ArrowRight, PanelTop, Plane } from "lucide-react";
 import { AviatorBoard } from "@/components/aviator-board";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -140,7 +140,7 @@ function Home() {
       <div className="hero-layout hero-glow">
         <div className="hero-copy">
         <h1 className="casino-title text-[2.35rem] leading-tight font-black tracking-tight">
-          <span>CASINO</span> <span className="casino-title-accent">ROOM</span>
+          <span>CASINO</span> <span className="casino-title-accent">WORLD</span>
         </h1>
         <p className="hero-description-float mt-5 rounded-r-xl border-l-2 border-gold bg-black/35 px-4 py-3 text-left text-base leading-7 text-white/85 shadow-[0_8px_30px_rgba(0,0,0,0.18)] sm:text-lg sm:leading-8">
           Our system tracks live Aviator signals, decodes multiplier patterns, and delivers precise
@@ -155,11 +155,18 @@ function Home() {
           <button
             type="button"
             onClick={() => void openAccount()}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-gold px-5 text-sm font-extrabold tracking-wide text-black"
+            className="home-cta-primary inline-flex h-14 items-center justify-center gap-2 rounded-full bg-gold px-6 text-sm font-extrabold tracking-[0.12em] text-black sm:h-16 sm:text-base"
           >
             GET STARTED
-            <Sparkles className="size-4" aria-hidden />
+            <ArrowRight className="size-5" aria-hidden />
           </button>
+          <a
+            href="#desk"
+            className="home-cta-secondary inline-flex h-14 items-center justify-center gap-2.5 rounded-full border border-gold/50 px-6 text-sm font-extrabold tracking-[0.12em] text-white no-underline transition-colors hover:bg-gold/10 sm:h-16 sm:text-base"
+          >
+            <span className="live-dot size-2.5 rounded-full bg-gold" aria-hidden="true" />
+            SEE LIVE HACKS
+          </a>
         </div>
         </div>
 
@@ -168,12 +175,60 @@ function Home() {
       <main id="desk" className="page-wrap">
         <div className="desk-layout">
         <article className="predictor-card overflow-hidden rounded-3xl">
-          <div className="relative aspect-[16/10] overflow-hidden bg-[#101a28]">
-            <AviatorBoard />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-            <div className="absolute bottom-3 left-3 inline-flex items-center gap-2 rounded-full border border-gold/50 bg-black/60 px-3 py-1.5 text-xs font-extrabold tracking-wide text-white">
-              <span className="live-dot live-board-dot size-2.5 rounded-full bg-red" />
-              LIVE BOARD
+          <div className="iphone-stage">
+            <div className="iphone-device" role="img" aria-label="iPhone-style screen showing animated live Aviator odds">
+              <span className="iphone-side-button iphone-side-button-action" aria-hidden="true" />
+              <span className="iphone-side-button iphone-side-button-volume-up" aria-hidden="true" />
+              <span className="iphone-side-button iphone-side-button-volume-down" aria-hidden="true" />
+              <span className="iphone-side-button iphone-side-button-power" aria-hidden="true" />
+              <div className="iphone-screen">
+                <div className="iphone-statusbar" aria-hidden="true">
+                  <span>9:41</span>
+                  <span className="iphone-dynamic-island" />
+                  <span className="iphone-status-icons">
+                    <span className="iphone-signal"><i /><i /><i /><i /></span>
+                    <span className="iphone-wifi" />
+                    <span className="iphone-battery"><i /></span>
+                  </span>
+                </div>
+                <div className="iphone-appbar">
+                  <span className="iphone-app-title">CASINO <b>WORLD</b></span>
+                  <span className="iphone-live-label"><i /> LIVE</span>
+                </div>
+                <div className="iphone-chart">
+                  <AviatorBoard />
+                  <div className="iphone-player-count" aria-hidden="true">
+                    <span className="iphone-player-coins"><i>G</i><i>₵</i></span>
+                    <span>1,466</span>
+                  </div>
+                </div>
+                {[0, 1].map((panel) => (
+                  <div className="iphone-bet-panel" key={panel}>
+                    <div className="iphone-bet-tabs">
+                      <span>Bet</span>
+                      <span>Auto</span>
+                    </div>
+                    <div className="iphone-bet-row">
+                      <div className="iphone-stake-controls">
+                        <div className="iphone-stake-stepper">
+                          <span>−</span>
+                          <strong>1.00</strong>
+                          <span>+</span>
+                        </div>
+                        <div className="iphone-stake-presets">
+                          <span>1</span><span>5</span><span>10</span><span>50</span>
+                        </div>
+                      </div>
+                      <div className="iphone-bet-button">
+                        {panel === 1 ? <PanelTop className="iphone-bet-panel-icon" aria-hidden /> : null}
+                        <span>Bet</span>
+                        <strong>1.00 <small>GHS</small></strong>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div className="iphone-home-indicator" aria-hidden="true"><i /></div>
+              </div>
             </div>
           </div>
           <div className="predictor-content">
@@ -194,7 +249,7 @@ function Home() {
             <button
               type="button"
               onClick={() => void openAccount()}
-              className="predictor-cta buy-pulse mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gold text-base font-extrabold text-black"
+              className="predictor-cta buy-pulse mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-gold text-base font-extrabold tracking-wide text-black"
             >
               <span>Start Now</span>
               <ArrowRight className="size-4" aria-hidden />
