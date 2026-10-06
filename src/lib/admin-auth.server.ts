@@ -8,8 +8,8 @@ const ADMIN_AUDIENCE = "casino-room-admin";
 
 function getAdminPasscode() {
   const passcode = process.env.ADMIN_PASSCODE?.trim();
-  if (!passcode || passcode.length < 16) {
-    throw new Error("ADMIN_PASSCODE must be configured with at least 16 characters.");
+  if (!passcode || passcode.length < 6) {
+    throw new Error("ADMIN_PASSCODE must be configured with at least 6 characters.");
   }
   return passcode;
 }
