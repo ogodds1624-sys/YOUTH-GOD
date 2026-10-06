@@ -1,6 +1,6 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { X } from "lucide-react";
+import { ArrowRight, Check, Copy, ShieldCheck, Smartphone, X } from "lucide-react";
 import { SignalLoading } from "@/components/signal-loading";
 import { getPaymentStatus, getSportyLink, recordPayment } from "@/lib/admin-snapshot";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -182,6 +182,7 @@ function PayPage() {
       return;
     }
     setError(null);
+    setSending(true);
     try {
       await rememberReferral();
       const saved = await recordPayment({ data: { name: "", amount, receipt, referredBy: storedReferral() } });
@@ -189,6 +190,8 @@ function PayPage() {
       savePendingPayment(saved.id, amount);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not send that payment.");
+    } finally {
+      setSending(false);
     }
   }
 
@@ -208,31 +211,42 @@ function PayPage() {
       ) : paymentId ? (
         <SignalLoading label={waitingLabel} />
       ) : null}
-      <section className="auth-card w-full max-w-md rounded-[28px] px-5 py-5">
-        <div className="flex items-start justify-between gap-3">
-          <p className="text-xs font-extrabold tracking-[0.18em] text-white">
+      <section className="payment-card auth-card w-full max-w-lg rounded-[28px] px-5 py-5 sm:px-7 sm:py-7">
+        <div className="flex items-center justify-between gap-3">
+          <p className="payment-kicker">
             {selected?.kind === "bank" ? "BANK TRANSFER" : "MOBILE MONEY"}
           </p>
           <Link
             to="/packages"
             aria-label="Close"
-            className="grid size-9 place-items-center rounded-xl border border-line text-white no-underline"
+            className="payment-close grid size-9 place-items-center rounded-xl text-white no-underline"
           >
             <X className="size-4" aria-hidden />
           </Link>
         </div>
-        <h1 className="mt-3 text-2xl font-extrabold tracking-tight">
+        <div className="payment-heading-row mt-3">
+          <div className="payment-method-icon" aria-hidden="true">
+            {selected?.kind === "bank" ? <ShieldCheck /> : <Smartphone />}
+          </div>
+          <div>
+        <h1 className="text-2xl font-extrabold tracking-tight">
           {selected?.kind === "bank" ? "Pay by bank transfer" : "Pay by MoMo transfer"}
         </h1>
-        <p className="mt-1 text-sm text-white/70">{store?.businessName ?? "Casino"}</p>
-        <p className="mt-3 text-4xl font-extrabold tracking-tight text-gold">
-          GHS {amount.toLocaleString("en-GH")}
-        </p>
+        <p className="mt-1 text-sm text-white/65">{store?.businessName ?? "Casino World"}</p>
+          </div>
+        </div>
+        <div className="payment-amount-card mt-5">
+          <div>
+            <p className="payment-amount-label">AMOUNT TO SEND</p>
+            <p className="payment-amount-value">GHS {amount.toLocaleString("en-GH")}</p>
+          </div>
+          <ShieldCheck className="size-6 text-gold" aria-hidden />
+        </div>
 
         {!store ? (
           <p className="mt-6 text-sm text-white/70">Loading checkout…</p>
         ) : !selected ? (
-          <p className="mt-6 text-sm text-white/70">
+          <p className="payment-empty mt-6 text-sm text-white/70">
             Checkout is not ready yet. Save a wallet or bank account on the admin payment gateway.
           </p>
         ) : (
@@ -245,8 +259,8 @@ function PayPage() {
                     type="button"
                     onClick={() => setChoice(index)}
                     className={
-                      "rounded-full border px-3 py-1 text-xs font-extrabold " +
-                      (index === choice ? "border-red bg-red text-white" : "border-line text-white")
+                      "payment-method-option " +
+                      (index === choice ? "is-selected" : "")
                     }
                   >
                     {option.label}
@@ -254,67 +268,70 @@ function PayPage() {
                 ))}
               </div>
             ) : null}
-            <dl className="mt-5 overflow-hidden rounded-2xl border border-line">
-              <div className="flex items-center justify-between gap-3 px-4 py-4">
-                <dt className="text-xs font-bold tracking-widest text-white">
+            <dl className="payment-details mt-5 overflow-hidden rounded-2xl">
+              <div className="payment-detail-row">
+                <dt className="payment-detail-label">
                   {selected.kind === "bank" ? "BANK" : "NETWORK"}
                 </dt>
-                <dd className="text-right text-base font-bold">{selected.label}</dd>
+                <dd className="payment-detail-value">{selected.label}</dd>
               </div>
-              <div className="flex items-center justify-between gap-3 border-t border-line px-4 py-4">
-                <dt className="text-xs font-bold tracking-widest text-white">SEND TO</dt>
-                <dd className="flex items-center gap-2 text-base font-extrabold">
-                  <span>{selected.number}</span>
+              <div className="payment-detail-row">
+                <dt className="payment-detail-label">SEND TO</dt>
+                <dd className="payment-number-wrap">
+                  <span className="payment-number">{selected.number}</span>
                   <button
                     type="button"
                     onClick={copyNumber}
-                    className="rounded-lg border border-red px-2 py-1 text-[11px] font-extrabold tracking-wide text-white"
+                    className="payment-copy-button"
+                    aria-label={copied ? "Number copied" : "Copy payment number"}
                   >
+                    {copied ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
                     {copied ? "COPIED" : "COPY"}
                   </button>
                 </dd>
               </div>
-              <div className="flex items-center justify-between gap-3 border-t border-line px-4 py-4">
-                <dt className="text-xs font-bold tracking-widest text-white">NAME</dt>
-                <dd className="text-right text-sm font-extrabold tracking-wide">{selected.name || "—"}</dd>
+              <div className="payment-detail-row">
+                <dt className="payment-detail-label">ACCOUNT NAME</dt>
+                <dd className="payment-detail-value">{selected.name || "—"}</dd>
               </div>
-              <div className="flex items-center justify-between gap-3 border-t border-line px-4 py-4">
-                <dt className="text-xs font-bold tracking-widest text-white">AMOUNT</dt>
-                <dd className="text-base font-extrabold text-gold">
+              <div className="payment-detail-row">
+                <dt className="payment-detail-label">AMOUNT</dt>
+                <dd className="payment-detail-value text-gold">
                   GHS {amount.toLocaleString("en-GH")}
                 </dd>
               </div>
             </dl>
 
-            <ol className="mt-5 space-y-4 text-base leading-relaxed text-white">
-              <li>
-                1. Send <strong className="text-gold">GHS {amount.toLocaleString("en-GH")}</strong> to the{" "}
-                <strong>{selected.label}</strong> details above.
-              </li>
-              <li>2. Attach a screenshot of your payment.</li>
-              <li>3. An admin confirms it under Transactions. This page updates when they do.</li>
+            <ol className="payment-steps mt-5">
+              <li><span>1</span><p>Send <strong>GHS {amount.toLocaleString("en-GH")}</strong> using the details above.</p></li>
+              <li><span>2</span><p>Upload a screenshot or receipt of the transfer.</p></li>
+              <li><span>3</span><p>We’ll update this page once your payment is confirmed.</p></li>
             </ol>
 
             {paymentId ? null : (
-              <form onSubmit={onSubmit} className="mt-6">
-                <label htmlFor="receipt" className="text-xs font-extrabold tracking-[0.14em] text-white">
-                  PAYMENT SCREENSHOT
+              <form onSubmit={onSubmit} className="payment-receipt-form mt-6">
+                <label htmlFor="receipt" className="payment-upload-label">
+                  <span>
+                    <strong>Upload payment receipt</strong>
+                    <small>{receiptName || "Image or PDF · required to confirm transfer"}</small>
+                  </span>
+                  <ArrowRight className="size-5" aria-hidden />
                 </label>
                 <input
                   id="receipt"
                   type="file"
                   accept="image/*,.pdf,.jpg,.jpeg,.png,.webp"
                   onChange={(event) => onReceipt(event.target.files?.[0])}
-                  className="mt-3 w-full rounded-xl border border-line bg-ink px-3 py-3 text-sm text-white file:mr-3 file:rounded-full file:border-0 file:bg-white/15 file:px-3 file:py-1 file:text-sm file:font-bold file:text-white"
+                  className="payment-file-input"
                 />
-                <p className="mt-2 text-sm text-white/60">{receiptName || "no file selected"}</p>
                 {error ? <p className="mt-2 text-sm text-red">{error}</p> : null}
                 <button
                   type="submit"
                   disabled={!allowed || sending}
-                  className="mt-4 flex h-14 w-full items-center justify-center rounded-xl bg-red text-base font-extrabold tracking-wide text-white disabled:opacity-70"
+                  className="payment-submit mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-xl text-base font-extrabold tracking-wide disabled:opacity-70"
                 >
                   I'VE SENT THE MONEY
+                  <ArrowRight className="size-5" aria-hidden />
                 </button>
               </form>
             )}
