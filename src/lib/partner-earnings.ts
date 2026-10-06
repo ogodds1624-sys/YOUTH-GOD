@@ -5,3 +5,7 @@ export function commissionAmount(grossEarnings: number, commissionPercent: numbe
 export function partnerEarnings(grossEarnings: number, commissionPercent: number) {
   return grossEarnings - commissionAmount(grossEarnings, commissionPercent);
 }
+
+export function availablePartnerEarnings(grossEarnings: number, commissionPercent: number, reservedPayouts: number) {
+  return Math.max(0, partnerEarnings(grossEarnings, commissionPercent) - reservedPayouts);
+}

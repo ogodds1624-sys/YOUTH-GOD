@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { adminAuthMiddleware } from "@/lib/admin-auth";
 import type { Sql } from "@/lib/db";
 import { isNairaAmount } from "@/lib/desk-session";
-import { partnerEarnings } from "@/lib/partner-earnings";
+import { availablePartnerEarnings, partnerEarnings } from "@/lib/partner-earnings";
 
 export type AdminMember = {
   id: string;
@@ -38,6 +38,21 @@ export type AdminPartner = {
   referrals: number;
   revenue: number;
   nigeriaRevenue: number;
+};
+
+export type PartnerPayout = {
+  id: string;
+  partnerId: string;
+  partnerName: string;
+  partnerEmail: string;
+  amount: number;
+  currency: "GHS" | "NGN";
+  accountType: "Mobile Money" | "Bank Transfer";
+  institution: string;
+  accountName: string;
+  accountNumber: string;
+  status: "pending" | "paid" | "rejected";
+  requestedAt: string;
 };
 
 export const GHANA_MOMO_NETWORKS = [
@@ -118,6 +133,7 @@ export type AdminSnapshot = {
   members: AdminMember[];
   payments: AdminPayment[];
   partners: AdminPartner[];
+  payouts: PartnerPayout[];
   testimonies: AdminTestimony[];
   blocked: { email: string; createdAt: string }[];
   gateway: GatewaySettings;
@@ -143,6 +159,9 @@ export type PartnerPortal = {
   nigeriaTodayEarnings: number;
   nigeriaRevenue: number;
   nigeriaEarnings: number;
+  availableGhs: number;
+  availableNgn: number;
+  payouts: PartnerPayout[];
   days: { label: string; revenue: number; earnings: number; today: boolean }[];
   nigeriaDays: { label: string; revenue: number; earnings: number; today: boolean }[];
   referrals: {
@@ -260,6 +279,34 @@ async function ensurePayments(sql: Sql) {
         code text not null,
         approved_at timestamptz not null default now()
       )
+    `;
+    await sql`
+      create table if not exists partner_payouts (
+        id text primary key,
+        partner_id text not null,
+        partner_name text not null,
+        partner_email text not null,
+        amount integer not null check (amount > 0),
+        currency text not null check (currency in ('GHS', 'NGN')),
+        account_type text not null check (account_type in ('Mobile Money', 'Bank Transfer')),
+        institution text not null,
+        account_name text not null,
+        account_number text not null,
+        status text not null default 'pending' check (status in ('pending', 'paid', 'rejected')),
+        requested_at timestamptz not null default now()
+      )
+    `;
+    await sql`alter table partner_payouts add column if not exists partner_name text not null default ''`;
+    await sql`alter table partner_payouts add column if not exists partner_email text not null default ''`;
+    await sql`
+      update partner_payouts payout
+      set partner_name = partner.name, partner_email = partner.email
+      from partners partner
+      where payout.partner_id = partner.id and (payout.partner_name = '' or payout.partner_email = '')
+    `;
+    await sql`
+      create unique index if not exists partner_payouts_one_pending_per_currency
+      on partner_payouts (partner_id, currency) where status = 'pending'
     `;
     await sql`
       insert into partner_logins (email, partner_id, name, password_hash, code, approved_at)
@@ -537,6 +584,45 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
       nigeriaRevenue: extra(ngnBy),
     };
   });
+  const payoutRows = await sql<{
+    id: string;
+    partner_id: string;
+    partner_name: string;
+    partner_email: string;
+    amount: number | string;
+    currency: string;
+    account_type: string;
+    institution: string;
+    account_name: string;
+    account_number: string;
+    status: string;
+    requested_at: string | Date;
+  }>`
+    select payout.id, payout.partner_id, coalesce(nullif(partner.name, ''), payout.partner_name) as partner_name,
+      coalesce(nullif(partner.email, ''), payout.partner_email) as partner_email,
+      payout.amount, payout.currency, payout.account_type, payout.institution, payout.account_name,
+      payout.account_number, payout.status, payout.requested_at
+    from partner_payouts payout
+    join partners partner on partner.id = payout.partner_id
+    order by payout.requested_at desc
+  `;
+  const payouts: PartnerPayout[] = payoutRows.map((row) => {
+    const requestedAt = row.requested_at instanceof Date ? row.requested_at : new Date(row.requested_at);
+    return {
+      id: row.id,
+      partnerId: row.partner_id,
+      partnerName: row.partner_name,
+      partnerEmail: row.partner_email,
+      amount: Number(row.amount),
+      currency: row.currency === "NGN" ? "NGN" : "GHS",
+      accountType: row.account_type === "Mobile Money" ? "Mobile Money" : "Bank Transfer",
+      institution: row.institution,
+      accountName: row.account_name,
+      accountNumber: row.account_number,
+      status: row.status === "paid" || row.status === "rejected" ? row.status : "pending",
+      requestedAt: Number.isNaN(requestedAt.getTime()) ? "" : requestedAt.toISOString(),
+    };
+  });
   const gatewayRows = await sql<{
     scans_remaining: number | string;
     scans_used: number | string;
@@ -596,6 +682,7 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
     members,
     payments,
     partners,
+    payouts,
     testimonies,
     blocked,
     gateway,
@@ -1291,6 +1378,27 @@ export const setPartnerCommission = createServerFn({ method: "POST" })
     return readSnapshot(sql);
   });
 
+export const setPartnerPayoutStatus = createServerFn({ method: "POST" })
+  .middleware([adminAuthMiddleware])
+  .inputValidator((data: { id: string; status: "paid" | "rejected" }) => {
+    if (!data?.id) throw new Error("Missing payout request.");
+    if (data.status !== "paid" && data.status !== "rejected") throw new Error("Choose a valid payout status.");
+    return { id: data.id, status: data.status };
+  })
+  .handler(async ({ data }) => {
+    const { getSql } = await import("@/lib/db");
+    const sql = await getSql();
+    await ensurePayments(sql);
+    const updated = await sql<{ id: string }>`
+      update partner_payouts
+      set status = ${data.status}
+      where id = ${data.id} and status = 'pending'
+      returning id
+    `;
+    if (updated.length === 0) throw new Error("This payout request has already been processed.");
+    return readSnapshot(sql);
+  });
+
 export const deletePartner = createServerFn({ method: "POST" })
   .middleware([adminAuthMiddleware])
   .inputValidator((data: { id: string }) => {
@@ -1365,8 +1473,8 @@ export const getPartnerPortal = createServerFn({ method: "POST" })
     const sql = await getSql();
     await ensurePayments(sql);
     await sql`alter table partners add column if not exists token text`;
-    const rows = await sql<{ name: string; code: string; status: string; commission: number | string }>`
-      select name, code, status, commission from partners where token = ${data.token}
+    const rows = await sql<{ id: string; name: string; email: string; code: string; status: string; commission: number | string }>`
+      select id, name, email, code, status, commission from partners where token = ${data.token}
     `;
     const partner = rows[0];
     if (!partner || partner.status !== "approved") throw new Error("Sign in again.");
@@ -1378,33 +1486,51 @@ export const getPartnerPortal = createServerFn({ method: "POST" })
       join registered_users reg on reg.user_id = r.user_id
       where lower(r.referred_by) = ${code} or lower(r.referred_by) = ${name}
     `;
-    const payments = await sql<{ amount: number | string; created_at: string | Date; user_id: string; country: string | null }>`
-      select p.amount, coalesce(p.confirmed_at, p.created_at) as created_at, p.user_id, c.country
-      from payments p
-      left join referrals r on r.user_id = p.user_id
-      left join player_country c on c.user_id = p.user_id
-      join lateral (
-        select code from partners
-        where lower(code) = lower(coalesce(nullif(p.referred_by, ''), ''))
-           or lower(name) = lower(coalesce(nullif(p.referred_by, ''), ''))
-           or lower(code) = lower(coalesce(r.referred_by, ''))
-           or lower(name) = lower(coalesce(r.referred_by, ''))
-        order by case
-          when lower(code) = lower(coalesce(nullif(p.referred_by, ''), '')) then 0
-          when lower(name) = lower(coalesce(nullif(p.referred_by, ''), '')) then 1
-          when lower(code) = lower(coalesce(r.referred_by, '')) then 2
-          else 3
-        end
-        limit 1
-      ) partner on true
-      where p.status = 'confirmed' and p.counts_revenue is not false
-        and lower(partner.code) = ${code}
-    `;
+    const payments = await partnerConfirmedPayments(sql, code);
     const earnings = (amount: number) => partnerEarnings(amount, commission);
     const ghanaPayments = payments.filter((row) => !isNairaPayment(Number(row.amount), row.country));
     const nigeriaPayments = payments.filter((row) => isNairaPayment(Number(row.amount), row.country));
     const revenue = ghanaPayments.reduce((sum, row) => sum + Number(row.amount), 0);
     const nigeriaRevenue = nigeriaPayments.reduce((sum, row) => sum + Number(row.amount), 0);
+    const payoutRows = await sql<{
+      id: string;
+      amount: number | string;
+      currency: string;
+      account_type: string;
+      institution: string;
+      account_name: string;
+      account_number: string;
+      status: string;
+      requested_at: string | Date;
+    }>`
+      select id, amount, currency, account_type, institution, account_name, account_number, status, requested_at
+      from partner_payouts where partner_id = ${partner.id} order by requested_at desc
+    `;
+    const payouts: PartnerPayout[] = payoutRows.map((row) => {
+      const requestedAt = row.requested_at instanceof Date ? row.requested_at : new Date(row.requested_at);
+      return {
+        id: row.id,
+        partnerId: partner.id,
+        partnerName: partner.name,
+        partnerEmail: partner.email,
+        amount: Number(row.amount),
+        currency: row.currency === "NGN" ? "NGN" : "GHS",
+        accountType: row.account_type === "Mobile Money" ? "Mobile Money" : "Bank Transfer",
+        institution: row.institution,
+        accountName: row.account_name,
+        accountNumber: row.account_number,
+        status: row.status === "paid" || row.status === "rejected" ? row.status : "pending",
+        requestedAt: Number.isNaN(requestedAt.getTime()) ? "" : requestedAt.toISOString(),
+      };
+    });
+    const reservedGhs = payouts
+      .filter((payout) => payout.currency === "GHS" && payout.status !== "rejected")
+      .reduce((sum, payout) => sum + payout.amount, 0);
+    const reservedNgn = payouts
+      .filter((payout) => payout.currency === "NGN" && payout.status !== "rejected")
+      .reduce((sum, payout) => sum + payout.amount, 0);
+    const availableGhs = availablePartnerEarnings(revenue, commission, reservedGhs);
+    const availableNgn = availablePartnerEarnings(nigeriaRevenue, commission, reservedNgn);
     const now = new Date();
     const ghanaToday = dayKeyInZone(now, GHANA_TZ);
     const nigeriaToday = dayKeyInZone(now, NIGERIA_TZ);
@@ -1474,10 +1600,98 @@ export const getPartnerPortal = createServerFn({ method: "POST" })
       nigeriaTodayEarnings: earnings(nigeriaTodayRevenue),
       nigeriaRevenue,
       nigeriaEarnings: earnings(nigeriaRevenue),
+      availableGhs,
+      availableNgn,
+      payouts,
       days,
       nigeriaDays,
       referrals,
     };
+  });
+
+async function partnerConfirmedPayments(sql: Sql, code: string) {
+  return sql<{ amount: number | string; created_at: string | Date; user_id: string; country: string | null }>`
+      select p.amount, coalesce(p.confirmed_at, p.created_at) as created_at, p.user_id, c.country
+      from payments p
+      left join referrals r on r.user_id = p.user_id
+      left join player_country c on c.user_id = p.user_id
+      join lateral (
+        select code from partners
+        where lower(code) = lower(coalesce(nullif(p.referred_by, ''), ''))
+           or lower(name) = lower(coalesce(nullif(p.referred_by, ''), ''))
+           or lower(code) = lower(coalesce(r.referred_by, ''))
+           or lower(name) = lower(coalesce(r.referred_by, ''))
+        order by case
+          when lower(code) = lower(coalesce(nullif(p.referred_by, ''), '')) then 0
+          when lower(name) = lower(coalesce(nullif(p.referred_by, ''), '')) then 1
+          when lower(code) = lower(coalesce(r.referred_by, '')) then 2
+          else 3
+        end
+        limit 1
+      ) partner on true
+      where p.status = 'confirmed' and p.counts_revenue is not false
+        and lower(partner.code) = ${code}
+    `;
+}
+
+export const requestPartnerPayout = createServerFn({ method: "POST" })
+  .inputValidator((data: {
+    token: string;
+    amount: number;
+    currency: "GHS" | "NGN";
+    accountType: "Mobile Money" | "Bank Transfer";
+    institution: string;
+    accountName: string;
+    accountNumber: string;
+  }) => {
+    const token = data?.token?.trim() ?? "";
+    const amount = Number(data?.amount);
+    const currency = data?.currency;
+    const accountType = data?.accountType;
+    const institution = typeof data?.institution === "string" ? data.institution.trim() : "";
+    const accountName = typeof data?.accountName === "string" ? data.accountName.trim() : "";
+    const accountNumber = typeof data?.accountNumber === "string" ? data.accountNumber.trim() : "";
+    if (!token) throw new Error("Sign in again.");
+    if (!Number.isSafeInteger(amount) || amount <= 0) throw new Error("Enter a valid payout amount.");
+    if (currency !== "GHS" && currency !== "NGN") throw new Error("Choose a payout currency.");
+    if (accountType !== "Mobile Money" && accountType !== "Bank Transfer") throw new Error("Choose a payout method.");
+    if (institution.length < 2 || institution.length > 100) throw new Error("Enter a valid bank or mobile money provider.");
+    if (accountName.length < 2 || accountName.length > 100) throw new Error("Enter the account holder's name.");
+    if (!/^[a-z\d +()-]{4,34}$/i.test(accountNumber)) throw new Error("Enter a valid account number.");
+    return { token, amount, currency, accountType, institution, accountName, accountNumber };
+  })
+  .handler(async ({ data }) => {
+    const { getSql } = await import("@/lib/db");
+    const sql = await getSql();
+    await ensurePayments(sql);
+    const rows = await sql<{ id: string; name: string; email: string; code: string; status: string; commission: number | string }>`
+      select id, name, email, code, status, commission from partners where token = ${data.token}
+    `;
+    const partner = rows[0];
+    if (!partner || partner.status !== "approved") throw new Error("Sign in again.");
+    const commission = Number(partner.commission) || 0;
+    const confirmed = await partnerConfirmedPayments(sql, partner.code.toLowerCase());
+    const gross = confirmed
+      .filter((row) => (data.currency === "NGN") === isNairaPayment(Number(row.amount), row.country))
+      .reduce((sum, row) => sum + Number(row.amount), 0);
+    const reservedRows = await sql<{ reserved: number | string }>`
+      select coalesce(sum(amount), 0) as reserved
+      from partner_payouts
+      where partner_id = ${partner.id} and currency = ${data.currency} and status in ('pending', 'paid')
+    `;
+    const available = availablePartnerEarnings(gross, commission, Number(reservedRows[0]?.reserved ?? 0));
+    if (data.amount > available) throw new Error("Payout amount exceeds your available earnings.");
+    const inserted = await sql<{ id: string }>`
+      insert into partner_payouts
+        (id, partner_id, partner_name, partner_email, amount, currency, account_type, institution, account_name, account_number)
+      values
+        (${crypto.randomUUID()}, ${partner.id}, ${partner.name}, ${partner.email}, ${data.amount}, ${data.currency},
+          ${data.accountType}, ${data.institution}, ${data.accountName}, ${data.accountNumber})
+      on conflict (partner_id, currency) where status = 'pending' do nothing
+      returning id
+    `;
+    if (inserted.length === 0) throw new Error("You already have a pending payout request in this currency.");
+    return { requested: true };
   });
 
 export const saveGatewayRates = createServerFn({ method: "POST" })

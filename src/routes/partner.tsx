@@ -1,8 +1,8 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { ArrowLeft, CalendarDays, CircleDollarSign, Copy, Diamond, LayoutGrid, Star, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, CircleDollarSign, Copy, Diamond, LayoutGrid, Star, Users, Wallet } from "lucide-react";
 import { SignalLoading } from "@/components/signal-loading";
-import { applyPartner, getPartnerGate, getPartnerPortal, partnerLogin, type PartnerPortal } from "@/lib/admin-snapshot";
+import { applyPartner, getPartnerGate, getPartnerPortal, partnerLogin, requestPartnerPayout, type PartnerPortal } from "@/lib/admin-snapshot";
 
 export const Route = createFileRoute("/partner")({
   component: PartnersPage,
@@ -18,7 +18,7 @@ function PartnersPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [desk, setDesk] = useState<"overview" | "referrals">("overview");
+  const [desk, setDesk] = useState<"overview" | "referrals" | "payouts">("overview");
   const [ready, setReady] = useState(false);
   const [mode, setMode] = useState<"sign" | "apply">("sign");
   const [name, setName] = useState("");
@@ -302,6 +302,9 @@ function PartnersPage() {
           <DeskButton active={desk === "referrals"} onClick={() => setDesk("referrals")} icon={<Users className="size-4" />}>
             REFERRALS
           </DeskButton>
+          <DeskButton active={desk === "payouts"} onClick={() => setDesk("payouts")} icon={<Wallet className="size-4" />}>
+            PAYOUTS
+          </DeskButton>
         </nav>
         <button type="button" onClick={signOut} className="mt-auto px-3 py-3 text-left text-xs font-extrabold tracking-wide text-[#8b95a7]">
           SIGN OUT
@@ -323,6 +326,13 @@ function PartnersPage() {
           >
             REFERRALS
           </button>
+          <button
+            type="button"
+            onClick={() => setDesk("payouts")}
+            className={"rounded-xl px-3 py-2 text-xs font-extrabold tracking-wide " + (desk === "payouts" ? "bg-red text-white" : "text-[#9aa3b2]")}
+          >
+            PAYOUTS
+          </button>
           <button type="button" onClick={signOut} className="ml-auto text-xs font-bold text-[#8b95a7]">
             Sign out
           </button>
@@ -330,8 +340,14 @@ function PartnersPage() {
         <div className="admin-content">
           {desk === "overview" ? (
             <Overview portal={portal} link={link} copied={copied} onCopy={() => void copyLink()} />
-          ) : (
+          ) : desk === "referrals" ? (
             <Referrals rows={portal.referrals} />
+          ) : (
+            <PayoutDesk
+              portal={portal}
+              token={token}
+              onUpdated={(updated) => setPortal(updated)}
+            />
           )}
         </div>
       </section>
@@ -423,6 +439,141 @@ function Overview({
       </div>
       <DayList title="Daily Revenue" unit="₦" days={portal.nigeriaDays} country="Nigeria" />
     </>
+  );
+}
+
+function PayoutDesk({
+  portal,
+  token,
+  onUpdated,
+}: {
+  portal: PartnerPortal;
+  token: string | null;
+  onUpdated: (portal: PartnerPortal) => void;
+}) {
+  const [currency, setCurrency] = useState<"GHS" | "NGN">("GHS");
+  const [accountType, setAccountType] = useState<"Mobile Money" | "Bank Transfer">("Mobile Money");
+  const [amount, setAmount] = useState("");
+  const [institution, setInstitution] = useState("");
+  const [accountName, setAccountName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const available = currency === "GHS" ? portal.availableGhs : portal.availableNgn;
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setError(null);
+    setSuccess(false);
+    if (!token) {
+      setError("Sign in again before requesting a payout.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await requestPartnerPayout({
+        data: {
+          token,
+          amount: Number(amount),
+          currency,
+          accountType,
+          institution,
+          accountName,
+          accountNumber,
+        },
+      });
+      onUpdated(await getPartnerPortal({ data: { token } }));
+      setAmount("");
+      setInstitution("");
+      setAccountName("");
+      setAccountNumber("");
+      setSuccess(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not submit payout request.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const formatMoney = (value: number, unit: "GHS" | "NGN") =>
+    `${unit === "GHS" ? "GHS " : "₦"}${value.toLocaleString(unit === "GHS" ? "en-GH" : "en-NG")}`;
+
+  return (
+    <div className="mt-6 space-y-4">
+      <div>
+        <p className="text-xs font-extrabold tracking-[0.18em] text-red">PARTNER PAYOUTS</p>
+        <h1 className="mt-3 text-2xl font-black tracking-tight">Request a payout</h1>
+        <p className="mt-1 text-sm text-[#8b95a7]">Request your available earnings and provide the account details where you want to receive payment.</p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Stat label="AVAILABLE · GHS" value={formatMoney(portal.availableGhs, "GHS")} note="Net earnings less pending and completed payouts." icon={<CircleDollarSign className="size-4" />} gold />
+        <Stat label="AVAILABLE · NGN" value={formatMoney(portal.availableNgn, "NGN")} note="Net earnings less pending and completed payouts." icon={<CircleDollarSign className="size-4" />} gold />
+      </div>
+      <section className="rounded-3xl border border-white/10 bg-[#111111] px-5 py-5">
+        <h2 className="text-lg font-black">Payout account</h2>
+        <form onSubmit={(event) => void submit(event)} className="mt-4 grid gap-3 md:grid-cols-2">
+          <label className="text-xs font-bold tracking-wide text-[#9aa3b2]">
+            CURRENCY
+            <select value={currency} onChange={(event) => setCurrency(event.target.value as "GHS" | "NGN")} className={fieldClass}>
+              <option value="GHS">GHS — Ghana cedi</option>
+              <option value="NGN">NGN — Nigerian naira</option>
+            </select>
+          </label>
+          <label className="text-xs font-bold tracking-wide text-[#9aa3b2]">
+            PAYOUT METHOD
+            <select value={accountType} onChange={(event) => setAccountType(event.target.value as "Mobile Money" | "Bank Transfer")} className={fieldClass}>
+              <option value="Mobile Money">Mobile Money</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+            </select>
+          </label>
+          <label className="text-xs font-bold tracking-wide text-[#9aa3b2]">
+            REQUEST AMOUNT · AVAILABLE {formatMoney(available, currency)}
+            <input type="number" min="1" max={available} step="1" required value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="Amount" className={fieldClass} />
+          </label>
+          <label className="text-xs font-bold tracking-wide text-[#9aa3b2]">
+            BANK OR MOBILE MONEY PROVIDER
+            <input required maxLength={100} value={institution} onChange={(event) => setInstitution(event.target.value)} placeholder="e.g. MTN, GCB Bank" className={fieldClass} />
+          </label>
+          <label className="text-xs font-bold tracking-wide text-[#9aa3b2]">
+            ACCOUNT HOLDER NAME
+            <input required maxLength={100} value={accountName} onChange={(event) => setAccountName(event.target.value)} placeholder="Name on account" className={fieldClass} />
+          </label>
+          <label className="text-xs font-bold tracking-wide text-[#9aa3b2]">
+            ACCOUNT NUMBER
+            <input required maxLength={34} value={accountNumber} onChange={(event) => setAccountNumber(event.target.value)} placeholder="Bank or mobile money number" className={fieldClass} />
+          </label>
+          {error ? <p className="text-sm font-bold text-red md:col-span-2">{error}</p> : null}
+          {success ? <p className="text-sm font-bold text-[#7ddea0] md:col-span-2">Payout request sent. You can track its status below.</p> : null}
+          <button type="submit" disabled={busy || available <= 0} className="h-12 w-fit rounded-xl bg-red px-5 text-sm font-extrabold tracking-wide text-white disabled:opacity-60 md:col-span-2">
+            {busy ? "SUBMITTING…" : available <= 0 ? "NO AVAILABLE EARNINGS" : "REQUEST PAYOUT"}
+          </button>
+          <p className="text-xs text-[#8b95a7] md:col-span-2">Only one pending request per currency is allowed. Pending and paid requests reduce your available balance; rejected requests do not.</p>
+        </form>
+      </section>
+      <section className="rounded-3xl border border-white/10 bg-[#111111] px-5 py-5">
+        <h2 className="text-lg font-black">Your payout requests</h2>
+        {portal.payouts.length === 0 ? (
+          <p className="mt-3 text-sm text-[#8b95a7]">You have not requested a payout yet.</p>
+        ) : (
+          <ul className="mt-3 divide-y divide-white/10">
+            {portal.payouts.map((payout) => (
+              <li key={payout.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+                <div>
+                  <p className="font-extrabold">{formatMoney(payout.amount, payout.currency)}</p>
+                  <p className="text-xs text-[#8b95a7]">
+                    {payout.accountType} · {payout.institution} · {payout.requestedAt ? new Date(payout.requestedAt).toLocaleDateString() : "recently"}
+                  </p>
+                </div>
+                <span className={payout.status === "paid" ? "pill-active" : payout.status === "pending" ? "pill-unpaid" : "text-xs font-bold text-red"}>
+                  {payout.status.toUpperCase()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
   );
 }
 

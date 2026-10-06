@@ -19,6 +19,7 @@ import {
   NIGERIA_TZ,
   shiftDayKey,
   rejectPayment,
+  setPartnerPayoutStatus,
   reversePayment,
   saveGatewayCheckout,
   saveGatewayRates,
@@ -29,6 +30,7 @@ import {
   type AdminSnapshot,
   type AdminTestimony,
   type BankAccount,
+  type PartnerPayout,
   type GatewayCheckout,
   type GatewaySettings,
   type MomoWallet,
@@ -45,6 +47,7 @@ const NAV = [
   { id: "members", label: "MEMBERS", icon: List },
   { id: "transactions", label: "TRANSACTIONS", icon: ArrowLeftRight },
   { id: "partners", label: "PARTNERS", icon: Hexagon },
+  { id: "payouts", label: "PARTNER PAYOUTS", icon: Wallet },
   { id: "block", label: "BLOCK", icon: Ban },
   { id: "gateway", label: "PAYMENT GATEWAY", icon: Wallet },
 ] as const;
@@ -124,6 +127,7 @@ const EMPTY_SNAPSHOT: AdminSnapshot = {
   members: [],
   payments: [],
   partners: [],
+  payouts: [],
   testimonies: [],
   blocked: [],
   total: 0,
@@ -400,7 +404,10 @@ function AdminPage() {
           {NAV.map((item) => {
             const Icon = item.icon;
             const active = tab === item.id;
-            const count = item.id === "transactions" ? pendingCount : item.id === "partners" ? partnerWait : 0;
+            const count =
+              item.id === "transactions" ? pendingCount :
+                item.id === "partners" ? partnerWait :
+                  item.id === "payouts" ? view.payouts.filter((payout) => payout.status === "pending").length : 0;
             return (
               <button
                 key={item.id}
@@ -431,7 +438,10 @@ function AdminPage() {
           <nav className="flex gap-1 overflow-x-auto px-3 pb-3">
             {NAV.map((item) => {
               const active = tab === item.id;
-              const count = item.id === "transactions" ? pendingCount : item.id === "partners" ? partnerWait : 0;
+              const count =
+                item.id === "transactions" ? pendingCount :
+                  item.id === "partners" ? partnerWait :
+                    item.id === "payouts" ? view.payouts.filter((payout) => payout.status === "pending").length : 0;
               return (
                 <button
                   key={item.id}
@@ -478,6 +488,14 @@ function AdminPage() {
               <span className="shrink-0 text-xs font-extrabold tracking-wide text-[#ff8d8d]">{partnerWait} TO APPROVE</span>
             </button>
           ) : null}
+          {view.payouts.some((payout) => payout.status === "pending") ? (
+            <button type="button" onClick={() => openTab("payouts")} className="mt-4 flex w-full items-center justify-between gap-3 rounded-2xl border border-[#f3b4b4] bg-red/15 px-4 py-3 text-left text-sm font-bold">
+              <span>Partner payout requests need review</span>
+              <span className="shrink-0 text-xs font-extrabold tracking-wide text-[#ff8d8d]">
+                {view.payouts.filter((payout) => payout.status === "pending").length} PENDING
+              </span>
+            </button>
+          ) : null}
 
           {tab === "overview" ? (
             <>
@@ -507,6 +525,8 @@ function AdminPage() {
             </div>
           ) : tab === "partners" ? (
             <PartnerDesk partners={view.partners} busy={spinning} onChange={setSnapshot} onBusy={setSpinning} />
+          ) : tab === "payouts" ? (
+            <PartnerPayoutDesk payouts={view.payouts} busy={spinning} onChange={setSnapshot} onBusy={setSpinning} />
           ) : tab === "block" ? (
             <BlockDesk rows={view.blocked} busy={spinning} onChange={setSnapshot} onBusy={setSpinning} />
           ) : (
@@ -988,6 +1008,95 @@ function PartnerDesk({
         )}
           </div>
         </div>
+      </section>
+    </div>
+  );
+}
+
+function PartnerPayoutDesk({
+  payouts,
+  busy,
+  onChange,
+  onBusy,
+}: {
+  payouts: PartnerPayout[];
+  busy: boolean;
+  onChange: (snapshot: AdminSnapshot) => void;
+  onBusy: (busy: boolean) => void;
+}) {
+  const [error, setError] = useState<string | null>(null);
+
+  async function update(id: string, status: "paid" | "rejected") {
+    setError(null);
+    onBusy(true);
+    try {
+      onChange(await setPartnerPayoutStatus({ data: { id, status } }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update payout request.");
+    } finally {
+      onBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-6 space-y-4">
+      <section className="rounded-3xl border border-white/10 bg-[#111111] px-4 py-5">
+        <h2 className="text-lg font-black">Partner payout requests</h2>
+        <p className="mt-1 text-sm text-[#8b95a7]">Review each request and the partner’s submitted payout account details.</p>
+        {error ? <p className="mt-3 text-sm font-bold text-red">{error}</p> : null}
+        {payouts.length === 0 ? (
+          <p className="mt-5 rounded-xl border border-white/10 px-4 py-6 text-center text-sm text-[#8b95a7]">No payout requests yet.</p>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {payouts.map((payout) => (
+              <article key={payout.id} className="rounded-2xl border border-white/10 bg-ink p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p className="font-extrabold">{payout.partnerName}</p>
+                    <p className="text-xs text-[#8b95a7]">{payout.partnerEmail}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-black text-gold">
+                      {payout.currency === "GHS" ? "GHS " : "₦"}{payout.amount.toLocaleString(payout.currency === "GHS" ? "en-GH" : "en-NG")}
+                    </p>
+                    <span className={payout.status === "paid" ? "pill-active" : payout.status === "pending" ? "pill-unpaid" : "text-xs font-bold text-red"}>
+                      {payout.status.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+                  <p><span className="text-[#8b95a7]">Method:</span> {payout.accountType}</p>
+                  <p><span className="text-[#8b95a7]">Bank/provider:</span> {payout.institution}</p>
+                  <p><span className="text-[#8b95a7]">Account name:</span> {payout.accountName}</p>
+                  <p><span className="text-[#8b95a7]">Account number:</span> {payout.accountNumber}</p>
+                  <p className="text-xs text-[#8b95a7]">
+                    Requested {payout.requestedAt ? new Date(payout.requestedAt).toLocaleString() : "recently"}
+                  </p>
+                </div>
+                {payout.status === "pending" ? (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void update(payout.id, "paid")}
+                      className="h-10 rounded-xl bg-red px-4 text-xs font-extrabold tracking-wide text-white disabled:opacity-60"
+                    >
+                      MARK AS PAID
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void update(payout.id, "rejected")}
+                      className="h-10 rounded-xl border border-white/15 px-4 text-xs font-extrabold tracking-wide text-[#9aa3b2] disabled:opacity-60"
+                    >
+                      REJECT
+                    </button>
+                  </div>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
