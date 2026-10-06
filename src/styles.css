@@ -657,7 +657,7 @@
 
 .package-buy-button {
   display: flex;
-  min-height: 3.75rem;
+  min-height: 4.25rem;
   width: 100%;
   align-items: center;
   justify-content: space-between;
@@ -677,23 +677,22 @@
 
 .package-buy-copy {
   display: grid;
-  gap: 0.12rem;
+  gap: 0.18rem;
 }
 
 .package-buy-copy > span {
-  color: #ffe08a;
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
+  color: rgba(23, 19, 10, 0.72);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.035em;
   line-height: 1.2;
-  text-transform: uppercase;
 }
 
 .package-buy-copy strong {
   color: #17130a;
-  font-size: 0.88rem;
+  font-size: 0.98rem;
   font-weight: 900;
-  letter-spacing: 0.015em;
+  letter-spacing: 0.005em;
   line-height: 1.25;
 }
 
@@ -746,6 +745,10 @@
 
 .package-buy-button:not(:disabled) {
   animation: none;
+}
+
+.package-buy-button:focus-visible {
+  outline-offset: 4px;
 }
 
 @media (min-width: 900px) {

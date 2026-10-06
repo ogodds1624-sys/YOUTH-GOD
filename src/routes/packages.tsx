@@ -221,7 +221,8 @@ function PackagesPage() {
                   className="package-buy-button"
                 >
                   <span className="package-buy-copy">
-                    <strong>Continue to checkout</strong>
+                    <strong>Unlock this session</strong>
+                    <span>Secure checkout · Pay in GHS</span>
                   </span>
                   <span className="package-buy-arrow" aria-hidden="true">
                     <ArrowRight />
