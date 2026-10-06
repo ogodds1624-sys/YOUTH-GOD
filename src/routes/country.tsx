@@ -73,7 +73,7 @@ function CountryPage() {
 
   return (
     <main className="home-theme relative flex min-h-dvh items-center justify-center overflow-hidden px-4 py-8 text-white">
-      <section className="menu-pop relative z-10 w-full max-w-md rounded-3xl border border-white/10 bg-black/55 px-5 py-6 text-white">
+      <section className="country-card menu-pop relative z-10 w-full max-w-md rounded-3xl px-5 py-6 text-white">
           <button
             type="button"
             onClick={backToRegistration}
@@ -84,7 +84,8 @@ function CountryPage() {
             </span>
             <span>Back</span>
           </button>
-          <h1 className="text-center text-2xl font-black tracking-tight">Choose your country</h1>
+          <h1 className="country-heading text-center text-2xl font-black tracking-tight">Choose your country</h1>
+          <p className="mt-2 text-center text-sm text-white/65">Choose your region to continue</p>
           {error ? (
             <p className="mt-3 text-center text-sm font-medium text-red" role="alert">
               {error}
@@ -95,7 +96,7 @@ function CountryPage() {
               type="button"
               onClick={() => void chooseCountry("Ghana")}
               disabled={saving}
-              className="country-btn flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-red text-base font-extrabold tracking-wide text-white disabled:opacity-60"
+              className="country-btn flex h-14 w-full items-center justify-center gap-3 rounded-2xl text-base font-extrabold tracking-wide disabled:opacity-60"
             >
               <span className="inline-flex items-center gap-3">
                 <svg viewBox="0 0 24 16" className="country-flag h-6 w-9 rounded-sm" aria-hidden>
@@ -115,7 +116,7 @@ function CountryPage() {
               onClick={() => void chooseCountry("Nigeria")}
               disabled={saving}
               style={{ "--i": 1 } as React.CSSProperties}
-              className="country-btn flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-red text-base font-extrabold tracking-wide text-white disabled:opacity-60"
+              className="country-btn flex h-14 w-full items-center justify-center gap-3 rounded-2xl text-base font-extrabold tracking-wide disabled:opacity-60"
             >
               <span className="inline-flex items-center gap-3">
                 <svg viewBox="0 0 24 16" className="country-flag h-6 w-9 rounded-sm" aria-hidden>
