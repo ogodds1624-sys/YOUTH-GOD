@@ -1,6 +1,6 @@
 import { memo, useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Send } from "lucide-react";
+import { ArrowUpRight, Send } from "lucide-react";
 import { getSportyLink, submitTestimony } from "@/lib/admin-snapshot";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useLiveStorefront } from "@/lib/storefront-live";
@@ -67,17 +67,28 @@ export const SiteFooter = memo(function SiteFooter() {
     <div className="below-fold mt-12">
       <section className="mx-auto w-full max-w-md px-4" aria-label="Send your testimony">
         <div className="flex flex-col items-center">
+          <p className="mb-3 text-center text-xs font-semibold tracking-wide text-[#a7a08a]">
+            Got a win to share? We would love to hear your story.
+          </p>
           <button
             id="send-testimony"
             type="button"
             onClick={() => (signedIn ? setOpen((value) => !value) : void navigate({ to: "/register" }))}
-            className="testimony-cta inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-red-300/40 bg-gradient-to-r from-red to-[#b91c24] px-6 text-xs font-extrabold tracking-[0.12em] text-white shadow-[0_8px_26px_rgba(226,59,59,0.3)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(226,59,59,0.42)]"
+            aria-expanded={open && signedIn}
+            aria-controls={open && signedIn ? "testimony-form" : undefined}
+            className="testimony-cta group inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl px-5 py-2.5 text-left"
           >
-            <Send className="size-4" aria-hidden />
-            SEND YOUR TESTIMONY
+            <span className="testimony-cta-icon inline-flex size-9 shrink-0 items-center justify-center rounded-xl" aria-hidden>
+              <Send className="size-4" />
+            </span>
+            <span className="flex flex-col">
+              <span className="text-xs font-black tracking-[0.12em]">SEND YOUR TESTIMONY</span>
+              <span className="mt-0.5 text-[10px] font-medium tracking-wide text-[#24200f]/75">Share your experience</span>
+            </span>
+            <ArrowUpRight className="testimony-cta-arrow ml-1 size-4 shrink-0" aria-hidden />
           </button>
           {open && signedIn ? (
-            <form onSubmit={(event) => void onSubmit(event)} className="mt-3 w-full rounded-2xl border border-white/15 bg-black/25 px-4 py-4 backdrop-blur-md">
+            <form id="testimony-form" onSubmit={(event) => void onSubmit(event)} className="mt-3 w-full rounded-2xl border border-white/15 bg-black/25 px-4 py-4 backdrop-blur-md">
               <label className="block text-xs font-bold tracking-[0.14em] text-[#9aa3b2]">
                 NAME
                 <input

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, PanelTop, Plane } from "lucide-react";
+import { ArrowRight, Plane } from "lucide-react";
 import { AviatorBoard } from "@/components/aviator-board";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
-import { getApprovedTestimonies, getSportyLink } from "@/lib/admin-snapshot";
+import { getSportyLink } from "@/lib/admin-snapshot";
 import { clearPending } from "@/lib/pending-registration";
 import { openTask } from "@/lib/task-order";
 import { useLiveStorefront } from "@/lib/storefront-live";
@@ -36,11 +36,7 @@ function Home() {
   const signedIn = !isPending && Boolean(user) && !user?.isDevFallback;
   const blocked = useBlocked();
   const [tick, setTick] = useState(0);
-  const [testimonies, setTestimonies] = useState<
-    { name: string; place: string; text: string; stars: number }[]
-  >([]);
-  const [testimoniesLoading, setTestimoniesLoading] = useState(true);
-  const [testimoniesError, setTestimoniesError] = useState(false);
+  const [flightDisplay, setFlightDisplay] = useState({ amount: "1.00", isFlying: false });
 
   async function openAccount() {
     if (isPending || blocked) return;
@@ -64,30 +60,6 @@ function Home() {
     return () => window.clearInterval(id);
   }, []);
 
-  useEffect(() => {
-    let current = true;
-    const loadTestimonies = () => {
-      void getApprovedTestimonies()
-        .then((rows) => {
-          if (!current) return;
-          setTestimonies(rows);
-          setTestimoniesError(false);
-          setTestimoniesLoading(false);
-        })
-        .catch(() => {
-          if (!current) return;
-          setTestimoniesError(true);
-          setTestimoniesLoading(false);
-        });
-    };
-    loadTestimonies();
-    const refreshId = window.setInterval(loadTestimonies, 30000);
-    return () => {
-      current = false;
-      window.clearInterval(refreshId);
-    };
-  }, []);
-
   const rows = [0, 1, 2].map((offset) => CALLS[(tick + offset) % CALLS.length]);
 
   return (
@@ -98,45 +70,6 @@ function Home() {
           This account has been blocked. You can sign in with another account or sign out.
         </p>
       ) : null}
-      <div className="ticker-band">
-        {testimoniesError ? (
-          <p className="text-center text-sm font-semibold text-white/75">Testimonies are temporarily unavailable.</p>
-        ) : testimonies.length ? (
-          <a
-            href="#send-testimony"
-            className="testimony-link block text-inherit no-underline"
-            aria-label="Send your testimony"
-          >
-            <div className="testimony-marquee" aria-label="Approved testimonies">
-              <div className="testimony-marquee-track">
-                {[0, 1].map((copy) => (
-                  <div className="testimony-marquee-group" key={copy} aria-hidden={copy === 1}>
-                    {testimonies.map((item, index) => (
-                      <article className="home-testimony" key={`${copy}-${item.name}-${index}`}>
-                        <span className="home-testimony-avatar" aria-hidden="true">{item.name.trim().charAt(0).toUpperCase()}</span>
-                        <div className="home-testimony-body">
-                          <div className="home-testimony-head">
-                            <span className="home-testimony-name">{item.name}</span>
-                            {item.place ? <span className="home-testimony-place">{item.place}</span> : null}
-                            <span className="sr-only">{item.stars} out of 5 stars</span>
-                            <span aria-hidden="true" className="home-testimony-stars">{"★".repeat(item.stars)}</span>
-                          </div>
-                          <p className="home-testimony-text">&ldquo;{item.text}&rdquo;</p>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </a>
-        ) : (
-          <p className="text-center text-sm font-semibold text-white/75">
-            {testimoniesLoading ? "Loading approved testimonies…" : "Approved testimonies will appear here."}
-          </p>
-        )}
-      </div>
-
       <div className="hero-layout hero-glow">
         <div className="hero-copy">
         <h1 className="casino-title text-[2.35rem] leading-tight font-black tracking-tight">
@@ -196,37 +129,34 @@ function Home() {
                   <span className="iphone-live-label"><i /> LIVE</span>
                 </div>
                 <div className="iphone-chart">
-                  <AviatorBoard />
+                  <AviatorBoard onFlightUpdate={setFlightDisplay} />
                   <div className="iphone-player-count" aria-hidden="true">
                     <span className="iphone-player-coins"><i>G</i><i>₵</i></span>
                     <span>1,466</span>
                   </div>
                 </div>
-                {[0, 1].map((panel) => (
-                  <div className="iphone-bet-panel" key={panel}>
-                    <div className="iphone-bet-tabs">
-                      <span>Bet</span>
-                      <span>Auto</span>
+                <div className="iphone-bet-panel">
+                  <div className="iphone-bet-tabs">
+                    <span>Bet</span>
+                    <span>Auto</span>
+                  </div>
+                  <div className="iphone-bet-row">
+                    <div className="iphone-stake-controls">
+                      <div className="iphone-stake-stepper">
+                        <span>−</span>
+                        <strong>1.00</strong>
+                        <span>+</span>
+                      </div>
+                      <div className="iphone-stake-presets">
+                        <span>1</span><span>5</span><span>10</span><span>50</span>
+                      </div>
                     </div>
-                    <div className="iphone-bet-row">
-                      <div className="iphone-stake-controls">
-                        <div className="iphone-stake-stepper">
-                          <span>−</span>
-                          <strong>1.00</strong>
-                          <span>+</span>
-                        </div>
-                        <div className="iphone-stake-presets">
-                          <span>1</span><span>5</span><span>10</span><span>50</span>
-                        </div>
-                      </div>
-                      <div className="iphone-bet-button">
-                        {panel === 1 ? <PanelTop className="iphone-bet-panel-icon" aria-hidden /> : null}
-                        <span>Bet</span>
-                        <strong>1.00 <small>GHS</small></strong>
-                      </div>
+                    <div className="iphone-bet-button">
+                      <span>{flightDisplay.isFlying ? "Cash Out" : "Bet"}</span>
+                      <strong>{flightDisplay.amount} <small>GHS</small></strong>
                     </div>
                   </div>
-                ))}
+                </div>
                 <div className="iphone-home-indicator" aria-hidden="true"><i /></div>
               </div>
             </div>

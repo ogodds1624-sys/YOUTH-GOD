@@ -1,5 +1,14 @@
 import { memo, useEffect, useId, useRef } from "react";
 
+type FlightDisplay = {
+  amount: string;
+  isFlying: boolean;
+};
+
+type AviatorBoardProps = {
+  onFlightUpdate?: (display: FlightDisplay) => void;
+};
+
 const HISTORY = ["1.58x", "20.92x", "1.10x", "0.89x", "1.14x", "10.38x", "3.08x", "1.63x", "1.17x"];
 const HISTORY_COLORS = ["#5ec8ff", "#e85cff", "#7d8cff", "#c084fc", "#60a5fa", "#f472b6", "#a78bfa", "#38bdf8", "#818cf8"];
 
@@ -25,7 +34,7 @@ function fillPath(t: number) {
   return `${curvePath(t)} L${end.x.toFixed(1)} 222 L36 222 Z`;
 }
 
-export const AviatorBoard = memo(function AviatorBoard() {
+export const AviatorBoard = memo(function AviatorBoard({ onFlightUpdate }: AviatorBoardProps) {
   const rawId = useId().replace(/:/g, "");
   const rayId = `ray-${rawId}`;
   const fillId = `fill-${rawId}`;
@@ -43,14 +52,26 @@ export const AviatorBoard = memo(function AviatorBoard() {
     let elapsed = 0;
     let lastFrame = performance.now();
     let frameId = 0;
+    let lastFlightDisplay = "";
 
-    const paint = (progress: number) => {
+    const paint = (progress: number, isFlying: boolean) => {
       const multiplier = 1 + progress * 4.99;
       const position = point(progress);
       const ahead = point(Math.min(1, progress + 0.01));
       const tilt = (Math.atan2(ahead.y - position.y, ahead.x - position.x) * 180) / Math.PI * 0.35;
+      const amount = multiplier.toFixed(2);
+      const flightDisplayKey = `${amount}:${isFlying}`;
 
-      if (oddsRef.current) oddsRef.current.textContent = `${multiplier.toFixed(2)}x`;
+      if (onFlightUpdate && flightDisplayKey !== lastFlightDisplay) {
+        lastFlightDisplay = flightDisplayKey;
+        onFlightUpdate({ amount, isFlying });
+      }
+
+      if (oddsRef.current) {
+        oddsRef.current.textContent = `${amount}x`;
+        oddsRef.current.setAttribute("x", Math.min(266, Math.max(82, position.x - 38)).toFixed(1));
+        oddsRef.current.setAttribute("y", Math.max(52, position.y - 36).toFixed(1));
+      }
       if (strokeRef.current) strokeRef.current.setAttribute("d", curvePath(progress));
       if (fillRef.current) fillRef.current.setAttribute("d", fillPath(progress));
       if (planeRef.current) {
@@ -73,11 +94,11 @@ export const AviatorBoard = memo(function AviatorBoard() {
       const cycleDuration = roundDuration + finishPause;
       const roundTime = elapsed % cycleDuration;
       if (roundTime >= roundDuration) {
-        paint(1);
+        paint(1, false);
       } else {
         const linearProgress = roundTime / roundDuration;
         const progress = 1 - Math.pow(1 - linearProgress, 2.2);
-        paint(progress);
+        paint(progress, progress > 0);
       }
     };
 
@@ -89,7 +110,7 @@ export const AviatorBoard = memo(function AviatorBoard() {
         })
       : null;
 
-    paint(0);
+    paint(0, false);
     if (reducedMotion) return;
     if (observer && root) observer.observe(root);
     frameId = requestAnimationFrame(step);
@@ -98,7 +119,7 @@ export const AviatorBoard = memo(function AviatorBoard() {
       cancelAnimationFrame(frameId);
       observer?.disconnect();
     };
-  }, []);
+  }, [onFlightUpdate]);
 
   return (
     <svg
