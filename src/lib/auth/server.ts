@@ -108,17 +108,20 @@ const explicitBaseURL = env("BETTER_AUTH_URL");
 // Explicit `string[]` (not a readonly tuple) — Better Auth's DynamicBaseURLConfig
 // requires a mutable `allowedHosts: string[]`.
 const previewAllowedHosts: string[] = [...PREVIEW_ALLOWED_HOSTS];
-// Local `npm run dev` (port 8080 contract). Browsers may send Origin as any of
-// these for the same server — trusting only `localhost` rejects `127.0.0.1` and
-// breaks email/password with "Invalid origin".
+// Local dev and preview ports. Browsers may send Origin as any of these for the
+// same server — trusting only `localhost` rejects loopback aliases and causes
+// email/password requests to fail with "Invalid origin".
 const LOCAL_DEV_ORIGINS: string[] = [
   "http://localhost:8080",
   "http://127.0.0.1:8080",
   "http://[::1]:8080",
-  // Fallback port when 8080 is already taken by another local app.
+  // Fallback ports when the default dev port is already in use.
   "http://localhost:8081",
   "http://127.0.0.1:8081",
   "http://[::1]:8081",
+  "http://localhost:8181",
+  "http://127.0.0.1:8181",
+  "http://[::1]:8181",
 ];
 function isPrivateIPv4(address: string): boolean {
   const octets = address.split(".").map(Number);
@@ -152,7 +155,7 @@ const localLanAddresses =
       ]
     : [];
 const localLanHosts = localLanAddresses.flatMap((address) =>
-  [8080, 8081].map((port) => `${address}:${port}`),
+  [8080, 8081, 8181].map((port) => `${address}:${port}`),
 );
 const localLanOrigins = localLanHosts.map((host) => `http://${host}`);
 // Custom domain in front of the Vercel app. BETTER_AUTH_URL is the *.vercel.app
