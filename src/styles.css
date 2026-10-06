@@ -236,6 +236,67 @@
   backdrop-filter: blur(14px);
 }
 
+.auth-brand {
+  color: #fff8f2;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 24px rgba(240, 193, 77, 0.14);
+}
+
+.auth-mode-switch {
+  padding: 0.3rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.auth-mode-link {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 0.75rem;
+  color: rgba(255, 255, 255, 0.68);
+  text-decoration: none;
+  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.auth-mode-link:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.auth-mode-link.is-active {
+  border-color: rgba(255, 224, 145, 0.7);
+  color: #17130a;
+  background: linear-gradient(115deg, #ffe28a, #edbd5b 58%, #dca43e);
+  box-shadow: 0 4px 14px rgba(237, 189, 91, 0.18), inset 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.auth-mode-link:focus-visible,
+.auth-submit:focus-visible {
+  outline: 2px solid #fff1bf;
+  outline-offset: 3px;
+}
+
+.auth-submit {
+  border: 1px solid rgba(255, 224, 145, 0.8);
+  color: #17130a;
+  background: linear-gradient(115deg, #ffe28a, #edbd5b 58%, #dca43e);
+  box-shadow: 0 8px 24px rgba(237, 189, 91, 0.2), inset 0 1px rgba(255, 255, 255, 0.5);
+  transition: transform 160ms ease, filter 160ms ease, box-shadow 160ms ease;
+}
+
+.auth-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: 0 11px 28px rgba(237, 189, 91, 0.28), inset 0 1px rgba(255, 255, 255, 0.6);
+}
+
+.auth-submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
 .auth-back-home {
   display: inline-flex;
   min-height: 2rem;

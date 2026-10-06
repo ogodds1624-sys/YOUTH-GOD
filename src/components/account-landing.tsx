@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react";
-import { AviatorBrandMark } from "@/components/aviator-brand-mark";
+import { ArrowLeft, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { SignalLoading } from "@/components/signal-loading";
 import { authClient, authEnabled } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -236,8 +235,7 @@ export function AccountLanding({ mode }: { mode: Mode }) {
           </span>
           <span>Back home</span>
         </Link>
-        <div className="mt-3 mb-5 flex items-center justify-center gap-2.5">
-          <AviatorBrandMark className="header-plane-mark auth-plane-mark" />
+        <div className="auth-brand mt-3 mb-5 text-center">
           <span className="text-xl font-extrabold tracking-tight">CASINO WORLD</span>
         </div>
         <h1 className={`auth-heading text-center${register ? " auth-heading-register" : ""}`}>
@@ -248,24 +246,20 @@ export function AccountLanding({ mode }: { mode: Mode }) {
             ? "Register once. This device remembers the login so you can come back anytime."
             : "Use the email and password you registered with. This device keeps you signed in."}
         </p>
-        <div className="mb-5 grid grid-cols-2 border-b border-line text-center text-base font-extrabold">
+        <div className="auth-mode-switch mb-5 grid grid-cols-2 gap-2 text-center text-sm font-extrabold" aria-label="Choose account action">
           <Link
             to="/login"
-            className={
-              "border-b-2 py-3 text-white no-underline " +
-              (register ? "border-transparent" : "border-red")
-            }
+            aria-current={!register ? "page" : undefined}
+            className={"auth-mode-link " + (!register ? "is-active" : "")}
           >
             Log in
           </Link>
           <Link
             to="/register"
-            className={
-              "border-b-2 py-3 text-white no-underline " +
-              (register ? "border-red" : "border-transparent")
-            }
+            aria-current={register ? "page" : undefined}
+            className={"auth-mode-link " + (register ? "is-active" : "")}
           >
-            Register
+            Create account
           </Link>
         </div>
         <form onSubmit={onSubmit} className="space-y-3">
@@ -330,9 +324,10 @@ export function AccountLanding({ mode }: { mode: Mode }) {
           <button
             type="submit"
             disabled={busy}
-            className="h-12 w-full rounded-xl bg-red text-base font-extrabold text-white shadow-lg disabled:opacity-60"
+            className="auth-submit mt-1 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-base font-extrabold disabled:opacity-60"
           >
             {busy ? "Saving…" : register ? "Create account" : "Log in"}
+            {!busy ? <ArrowRight className="size-4" aria-hidden /> : null}
           </button>
         </form>
         <p className="mt-4 text-center text-sm text-white">
