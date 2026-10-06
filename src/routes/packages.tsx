@@ -212,10 +212,6 @@ function PackagesPage() {
                     <Clock3 aria-hidden />
                     {pack.detail}
                   </p>
-                  <span className="package-availability">
-                    <span aria-hidden="true" />
-                    Available
-                  </span>
                 </div>
                 <button
                   type="button"
