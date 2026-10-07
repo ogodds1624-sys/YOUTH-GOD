@@ -76,8 +76,7 @@ function Home() {
           <span>CASINO</span> <span className="casino-title-accent">WORLD</span>
         </h1>
         <p className="hero-description-float mt-5 rounded-r-xl border-l-2 border-gold bg-black/35 px-4 py-3 text-left text-base leading-7 text-white/85 shadow-[0_8px_30px_rgba(0,0,0,0.18)] sm:text-lg sm:leading-8">
-          Our system tracks live Aviator signals, decodes multiplier patterns, and delivers precise
-          cash-out opportunities before the round finishes
+          Our intelligent system analyzes live Aviator signals and multiplier trends to identify potential cash-out opportunities in real time.
         </p>
         {store && store.rates.length > 0 ? (
           <p className="mt-3 text-sm text-muted">
