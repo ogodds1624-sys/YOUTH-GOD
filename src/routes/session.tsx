@@ -82,10 +82,6 @@ function SessionPage() {
   const total = Math.ceil(left / 1000);
   const clock = `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
   const issueWaitSeconds = connectionWaitSeconds(mins, elapsedMs);
-  const issueClock =
-    issueWaitSeconds == null
-      ? ""
-      : `${String(Math.floor(issueWaitSeconds / 60)).padStart(2, "0")}:${String(issueWaitSeconds % 60).padStart(2, "0")}`;
 
   return (
     <main className="flex h-dvh flex-col bg-ink text-white">
@@ -113,12 +109,9 @@ function SessionPage() {
               Connection issue
             </h1>
             <p id="connection-issue-message" className="mt-2 text-sm leading-relaxed text-white/70">
-              We’re reconnecting you to the signal desk. Your session timer continues during this check.
+              We're reconnecting your phone to the server. Check your internet connections.
             </p>
-            <p className="mt-5 font-mono text-3xl font-black text-[#3dde6a]" aria-live="off">
-              {issueClock}
-            </p>
-            <p className="mt-1 text-xs text-white/50">Returning to your session automatically</p>
+            <p className="mt-5 text-xs text-white/50">Returning to your session automatically</p>
           </section>
         </div>
       ) : null}
