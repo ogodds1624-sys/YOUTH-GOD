@@ -1,6 +1,6 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
-import { ArrowLeft, ArrowRight, Clock3, Flame, Gem, X, Zap } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { ArrowLeft, ArrowRight, Clock3, Flame, Gem, LoaderCircle, X, Zap } from "lucide-react";
 import { getPaymentStatus, getSportyLink, recordPayment } from "@/lib/admin-snapshot";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useLiveStorefront } from "@/lib/storefront-live";
@@ -41,6 +41,8 @@ function NigeriaPayPage() {
   const [waiting, setWaiting] = useState(false);
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [result, setResult] = useState<"pending" | "confirmed" | "rejected">("pending");
+  const sendingRef = useRef(false);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (isPending) return;
@@ -115,6 +117,10 @@ function NigeriaPayPage() {
     if (result === "rejected") {
       clearPendingPayment();
       setWaiting(false);
+      sendingRef.current = false;
+      setSending(false);
+      setReceipt("");
+      setReceiptName("");
       setPaymentId(null);
       setResult("pending");
       setShowPay(false);
@@ -168,17 +174,16 @@ function NigeriaPayPage() {
     reader.readAsDataURL(file);
   }
 
-  const [sending, setSending] = useState(false);
-
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (sending) return;
+    if (sendingRef.current || paymentId) return;
     if (!open || amount == null) return;
     if (!receipt) {
       setError("Attach a screenshot of your payment.");
       return;
     }
     setError(null);
+    sendingRef.current = true;
     setSending(true);
     try {
       await rememberReferral();
@@ -188,6 +193,7 @@ function NigeriaPayPage() {
       setWaiting(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not send that payment.");
+      sendingRef.current = false;
       setSending(false);
     }
   }
@@ -447,10 +453,17 @@ function NigeriaPayPage() {
               {error ?  <p className="mt-2 text-sm text-red">{error}</p> : null}
               <button
                 type="submit"
-                disabled={sending}
-                className="mt-4 flex h-14 w-full items-center justify-center rounded-xl bg-red text-base font-extrabold tracking-wide text-white"
+                disabled={!receipt || sending || Boolean(paymentId)}
+                className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-red text-base font-extrabold tracking-wide text-white disabled:opacity-70"
               >
-                I'VE SENT THE MONEY
+                {sending ? (
+                  <>
+                    SENDING RECEIPT…
+                    <LoaderCircle className="size-5 animate-spin" aria-hidden />
+                  </>
+                ) : (
+                  "I'VE SENT THE MONEY"
+                )}
               </button>
             </form>
           </>

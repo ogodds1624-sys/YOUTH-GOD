@@ -1,6 +1,6 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
-import { ArrowRight, Check, Copy, ShieldCheck, Smartphone, X } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { ArrowRight, Check, Copy, LoaderCircle, ShieldCheck, Smartphone, X } from "lucide-react";
 import { SignalLoading } from "@/components/signal-loading";
 import { getPaymentStatus, getSportyLink, recordPayment } from "@/lib/admin-snapshot";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -32,6 +32,8 @@ function PayPage() {
   const [error, setError] = useState<string | null>(null);
   const [paymentId, setPaymentId] = useState<string | null>(null);
   const [result, setResult] = useState<"pending" | "confirmed" | "rejected">("pending");
+  const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false);
 
   useEffect(() => {
     if (isPending) return;
@@ -172,16 +174,15 @@ function PayPage() {
     reader.readAsDataURL(file);
   }
 
-  const [sending, setSending] = useState(false);
-
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (sending) return;
+    if (sendingRef.current || paymentId) return;
     if (!receipt) {
       setError("Attach a screenshot of your payment.");
       return;
     }
     setError(null);
+    sendingRef.current = true;
     setSending(true);
     try {
       await rememberReferral();
@@ -190,7 +191,7 @@ function PayPage() {
       savePendingPayment(saved.id, amount);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not send that payment.");
-    } finally {
+      sendingRef.current = false;
       setSending(false);
     }
   }
@@ -327,11 +328,20 @@ function PayPage() {
                 {error ? <p className="mt-2 text-sm text-red">{error}</p> : null}
                 <button
                   type="submit"
-                  disabled={!allowed || sending}
+                  disabled={!allowed || !receipt || sending || Boolean(paymentId)}
                   className="payment-submit mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-xl text-base font-extrabold tracking-wide disabled:opacity-70"
                 >
-                  I'VE SENT THE MONEY
-                  <ArrowRight className="size-5" aria-hidden />
+                  {sending ? (
+                    <>
+                      SENDING RECEIPT…
+                      <LoaderCircle className="size-5 animate-spin" aria-hidden />
+                    </>
+                  ) : (
+                    <>
+                      I'VE SENT THE MONEY
+                      <ArrowRight className="size-5" aria-hidden />
+                    </>
+                  )}
                 </button>
               </form>
             )}
