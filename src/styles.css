@@ -1604,6 +1604,7 @@
 }
 
 .predictor-content {
+  position: relative;
   padding: 1.25rem;
 }
 
@@ -1651,10 +1652,44 @@
   margin-top: 1rem;
   max-width: 34rem;
   border-left: 2px solid rgba(240, 193, 77, 0.8);
-  padding-left: 0.85rem;
+  border-radius: 0 0.75rem 0.75rem 0;
+  background: linear-gradient(90deg, rgba(240, 193, 77, 0.08), transparent);
+  padding: 0.7rem 0.8rem;
   color: rgba(255, 255, 255, 0.68);
   font-size: 0.875rem;
   line-height: 1.65;
+}
+
+.predictor-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1rem;
+}
+
+.predictor-highlights span {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.035);
+  padding: 0.4rem 0.7rem;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.predictor-highlights svg {
+  color: #f0c14d;
+}
+
+.predictor-footnote {
+  margin: 0.8rem 0 0;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.7rem;
+  text-align: center;
 }
 
 .predictor-cta {
