@@ -943,6 +943,7 @@ function PartnerDesk({
           <div className="min-w-[76rem]">
         <div className={partnerCols + " desk-head text-[11px] tracking-[0.12em]"}>
           <span>PARTNER</span>
+          <span>ACTIONS</span>
           <span>STATUS</span>
           <span>CODE</span>
           <span className="whitespace-nowrap">REFERRAL LINK</span>
@@ -950,7 +951,6 @@ function PartnerDesk({
           <span className="pl-4 whitespace-nowrap">REVENUE (GHS)</span>
           <span className="pl-3 whitespace-nowrap">REVENUE (N)</span>
           <span className="pl-3 whitespace-nowrap">REVENUE (YOU)</span>
-          <span>ACTIONS</span>
         </div>
         {partners.length === 0 ? (
           <p className="px-4 py-5 text-sm text-[#6b7280]">No partners yet.</p>
@@ -962,6 +962,11 @@ function PartnerDesk({
                 <div className="min-w-0">
                   <p className="truncate font-extrabold">{partner.name}</p>
                   <p className="truncate text-xs text-[#6b7280]">{partner.email}</p>
+                </div>
+                <div>
+                  <button type="button" disabled={busy} onClick={() => void run(() => deletePartner({ data: { id: partner.id } }))} className="h-7 rounded-lg border border-red/80 px-2 text-[10px] font-extrabold text-red disabled:opacity-60">
+                    DELETE
+                  </button>
                 </div>
                 <div className="flex min-w-0 flex-col items-start gap-1">
                   <span className={partner.status === "approved" ? "pill-active" : "pill-unpaid"}>
@@ -1001,11 +1006,6 @@ function PartnerDesk({
                   <p className="mt-1 whitespace-nowrap text-[#f0c14d]">
                     ₦{(partner.revenueYouNgn ?? Math.round((partner.nigeriaRevenue * partner.commission) / 100)).toLocaleString("en-NG")}
                   </p>
-                </div>
-                <div>
-                  <button type="button" disabled={busy} onClick={() => void run(() => deletePartner({ data: { id: partner.id } }))} className="h-7 rounded-lg border border-red/80 px-2 text-[10px] font-extrabold text-red disabled:opacity-60">
-                    DELETE
-                  </button>
                 </div>
               </article>
             );
@@ -1210,7 +1210,7 @@ function CommissionRate({ value, disabled, onSave }: { value: number; disabled: 
 }
 
 const partnerCols =
-  "partner-row desk-row grid-cols-[minmax(8rem,1.15fr)_8rem_7rem_minmax(11rem,1.3fr)_10.5rem_9.25rem_8rem_8.5rem_8rem]";
+  "partner-row desk-row grid-cols-[minmax(8rem,1.15fr)_8rem_8rem_7rem_minmax(11rem,1.3fr)_10.5rem_9.25rem_8rem_8.5rem]";
 
 function TransactionHistory({
   payments,
