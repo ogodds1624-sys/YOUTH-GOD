@@ -28,6 +28,9 @@ const CALLS = [
   { n: 4824, label: "Trend check", x: "1.91x" },
 ];
 
+const WELCOME_TITLE = "WELCOME TO THE WORLD OF CASINO HACKS";
+const HOME_TITLE = "# CASINO WORLD";
+
 function Home() {
   const navigate = useNavigate();
   const { ref } = Route.useSearch();
@@ -37,6 +40,7 @@ function Home() {
   const blocked = useBlocked();
   const [tick, setTick] = useState(0);
   const [flightDisplay, setFlightDisplay] = useState({ amount: "1.00", isFlying: false });
+  const [welcomeTitle, setWelcomeTitle] = useState("");
 
   async function openAccount() {
     if (isPending || blocked) return;
@@ -49,6 +53,31 @@ function Home() {
 
   useEffect(() => {
     clearPending();
+  }, []);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setWelcomeTitle(HOME_TITLE);
+      return;
+    }
+
+    let index = 0;
+    let finishTimer: number | undefined;
+    setWelcomeTitle("");
+
+    const typingTimer = window.setInterval(() => {
+      index += 1;
+      setWelcomeTitle(WELCOME_TITLE.slice(0, index));
+      if (index >= WELCOME_TITLE.length) {
+        window.clearInterval(typingTimer);
+        finishTimer = window.setTimeout(() => setWelcomeTitle(HOME_TITLE), 900);
+      }
+    }, 70);
+
+    return () => {
+      window.clearInterval(typingTimer);
+      if (finishTimer !== undefined) window.clearTimeout(finishTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -73,8 +102,8 @@ function Home() {
       <div className="hero-layout hero-glow">
         <div className="hero-copy">
         <div className="welcome-title-wrap">
-          <h1 className="casino-title welcome-title">
-            WELCOME TO THE WORLD OF CASINO HACKS
+          <h1 className="casino-title welcome-title" aria-label={HOME_TITLE} aria-live="off">
+            {welcomeTitle}
           </h1>
         </div>
         <p className="hero-description-float mt-5 rounded-r-xl border-l-2 border-gold bg-black/35 px-4 py-3 text-left text-base leading-7 text-white/85 shadow-[0_8px_30px_rgba(0,0,0,0.18)] sm:text-lg sm:leading-8">

@@ -1989,43 +1989,9 @@
 }
 
 .welcome-title-wrap {
-  position: relative;
-  isolation: isolate;
   width: fit-content;
   max-width: 100%;
   margin-inline: auto;
-}
-
-.welcome-title-wrap::before,
-.welcome-title-wrap::after {
-  position: absolute;
-  z-index: -1;
-  display: block;
-  border: 1px solid rgba(247, 212, 119, 0.28);
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.48), transparent 18%),
-    radial-gradient(circle at 38% 34%, rgba(247, 212, 119, 0.16), rgba(247, 212, 119, 0.025) 68%, transparent 72%);
-  box-shadow: inset -3px -4px 8px rgba(247, 212, 119, 0.07), 0 0 18px rgba(247, 212, 119, 0.05);
-  content: "";
-  pointer-events: none;
-  animation: welcome-bubble-drift 9s ease-in-out infinite;
-}
-
-.welcome-title-wrap::before {
-  top: 8%;
-  left: 3%;
-  width: clamp(1.15rem, 3vw, 2rem);
-  aspect-ratio: 1;
-}
-
-.welcome-title-wrap::after {
-  right: 7%;
-  bottom: 9%;
-  width: clamp(0.75rem, 2vw, 1.35rem);
-  aspect-ratio: 1;
-  animation-delay: -4.5s;
-  animation-duration: 11s;
 }
 
 .hero-copy h1.welcome-title {
@@ -2034,19 +2000,6 @@
   font-size: clamp(2rem, 7vw, 4.5rem);
   line-height: 1.05;
   letter-spacing: -0.045em;
-}
-
-@keyframes welcome-bubble-drift {
-  0%,
-  100% {
-    opacity: 0.48;
-    transform: translate3d(0, 0, 0) scale(0.96);
-  }
-
-  50% {
-    opacity: 0.78;
-    transform: translate3d(0, -8px, 0) scale(1.04);
-  }
 }
 
 .casino-title-accent {
@@ -2365,9 +2318,7 @@
 @media (prefers-reduced-motion: reduce) {
   .float-loop,
   .wa-float,
-  .hero-description-float,
-  .welcome-title-wrap::before,
-  .welcome-title-wrap::after {
+  .hero-description-float {
     animation: none;
   }
 
