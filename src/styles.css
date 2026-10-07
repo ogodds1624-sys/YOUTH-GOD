@@ -2002,6 +2002,37 @@
   letter-spacing: -0.035em;
 }
 
+.welcome-typing-text {
+  background: linear-gradient(105deg, #fff4d3 0%, #f0c14d 48%, #fff0c2 100%);
+  background-clip: text;
+  color: transparent;
+  -webkit-background-clip: text;
+  text-shadow: 0 5px 28px rgba(240, 193, 77, 0.12);
+}
+
+.welcome-typing-caret {
+  display: inline-block;
+  width: 2px;
+  height: 0.82em;
+  margin-left: 0.12em;
+  transform: translateY(0.08em);
+  border-radius: 99px;
+  background: #f0c14d;
+  box-shadow: 0 0 12px rgba(240, 193, 77, 0.35);
+  animation: welcome-caret-blink 1.1s ease-in-out infinite;
+}
+
+@keyframes welcome-caret-blink {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+
+  50% {
+    opacity: 0.22;
+  }
+}
+
 .hero-copy h1.welcome-title.is-brand {
   font-size: clamp(1.35rem, 3.4vw, 2.35rem);
   font-style: italic;
@@ -2337,7 +2368,8 @@
 @media (prefers-reduced-motion: reduce) {
   .float-loop,
   .wa-float,
-  .hero-description-float {
+  .hero-description-float,
+  .welcome-typing-caret {
     animation: none;
   }
 

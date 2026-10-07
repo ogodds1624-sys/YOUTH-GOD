@@ -112,7 +112,10 @@ function Home() {
                 <span>CASINO</span> <span className="casino-title-accent">WORLD</span>
               </>
             ) : (
-              welcomeTitle
+              <>
+                <span className="welcome-typing-text">{welcomeTitle}</span>
+                <span className="welcome-typing-caret" aria-hidden="true" />
+              </>
             )}
           </h1>
         </div>
