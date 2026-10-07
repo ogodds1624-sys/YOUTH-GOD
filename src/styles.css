@@ -2005,6 +2005,7 @@
 .hero-copy h1.welcome-title.is-brand {
   font-size: clamp(1.35rem, 3.4vw, 2.35rem);
   font-style: italic;
+  font-weight: 900;
   letter-spacing: -0.045em;
   line-height: 1;
   text-shadow: none;
