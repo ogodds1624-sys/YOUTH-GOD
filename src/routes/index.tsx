@@ -29,7 +29,7 @@ const CALLS = [
 ];
 
 const WELCOME_TITLE = "WELCOME TO THE WORLD OF CASINO HACKS";
-const HOME_TITLE = "# CASINO WORLD";
+const HOME_TITLE = "CASINO WORLD";
 
 function Home() {
   const navigate = useNavigate();
@@ -102,8 +102,18 @@ function Home() {
       <div className="hero-layout hero-glow">
         <div className="hero-copy">
         <div className="welcome-title-wrap">
-          <h1 className="casino-title welcome-title" aria-label={HOME_TITLE} aria-live="off">
-            {welcomeTitle}
+          <h1
+            className={"casino-title welcome-title " + (welcomeTitle === HOME_TITLE ? "is-brand" : "is-welcome")}
+            aria-label={HOME_TITLE}
+            aria-live="off"
+          >
+            {welcomeTitle === HOME_TITLE ? (
+              <>
+                <span>CASINO</span> <span className="casino-title-accent">WORLD</span>
+              </>
+            ) : (
+              welcomeTitle
+            )}
           </h1>
         </div>
         <p className="hero-description-float mt-5 rounded-r-xl border-l-2 border-gold bg-black/35 px-4 py-3 text-left text-base leading-7 text-white/85 shadow-[0_8px_30px_rgba(0,0,0,0.18)] sm:text-lg sm:leading-8">
