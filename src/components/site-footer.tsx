@@ -152,7 +152,7 @@ export const SiteFooter = memo(function SiteFooter() {
             </span>
           </Link>
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-[#8b95a7]">
-            Live Aviator signals, predicted cash-out windows, and session time when you are ready to play.
+            Explore Aviator insights, potential cash-out moments, and flexible session options—all in one place.
           </p>
         </section>
 
