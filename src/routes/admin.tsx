@@ -392,11 +392,7 @@ function AdminPage() {
         <div className="flex items-start justify-between gap-2 px-2">
           <div className="flex items-start gap-2">
             <Diamond className="mt-1 size-4 shrink-0 fill-red text-red" aria-hidden />
-            <span className="text-xl leading-tight font-black tracking-tight">
-              Aviator
-              <br />
-              Hack
-            </span>
+            <span className="text-xl leading-tight font-black tracking-tight">Casinworld</span>
           </div>
           <span className="rounded-full border border-red px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-red">ADMIN</span>
         </div>
@@ -432,7 +428,7 @@ function AdminPage() {
         <header className="admin-mobile-nav border-b border-white/10 bg-ink">
           <div className="flex items-center gap-3 px-4 py-3">
             <Diamond className="size-4 shrink-0 fill-red text-red" aria-hidden />
-            <span className="truncate text-lg font-black tracking-tight">Casino</span>
+            <span className="truncate text-lg font-black tracking-tight">Casinworld</span>
             <span className="rounded-full border border-red px-2.5 py-1 text-[11px] font-extrabold tracking-wide text-red">ADMIN</span>
           </div>
           <nav className="flex gap-1 overflow-x-auto px-3 pb-3">
