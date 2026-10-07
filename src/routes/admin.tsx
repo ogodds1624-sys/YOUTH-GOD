@@ -940,7 +940,7 @@ function PartnerDesk({
           <p className="mt-1 text-sm text-[#8b95a7]">Members who open /?ref=CODE are credited to this partner in Ghana and Nigeria.</p>
         </div>
         <div className="overflow-x-auto">
-          <div className="min-w-[68rem]">
+          <div className="min-w-[76rem]">
         <div className={partnerCols + " desk-head text-[11px] tracking-[0.12em]"}>
           <span>PARTNER</span>
           <span>STATUS</span>
@@ -949,6 +949,7 @@ function PartnerDesk({
           <span className="pl-3 whitespace-nowrap">COMMISSION</span>
           <span className="pl-4 whitespace-nowrap">REVENUE (GHS)</span>
           <span className="pl-3 whitespace-nowrap">REVENUE (N)</span>
+          <span className="pl-3 whitespace-nowrap">REVENUE (YOU)</span>
           <span>ACTIONS</span>
         </div>
         {partners.length === 0 ? (
@@ -993,6 +994,14 @@ function PartnerDesk({
                 </div>
                 <span className="pl-4 whitespace-nowrap text-xs font-bold">GHS {partner.revenue.toLocaleString("en-GH")}</span>
                 <span className="pl-3 whitespace-nowrap text-xs font-bold">₦{partner.nigeriaRevenue.toLocaleString("en-NG")}</span>
+                <div className="pl-3 text-xs font-bold">
+                  <p className="whitespace-nowrap text-[#f0c14d]">
+                    GHS {(partner.revenueYouGhs ?? Math.round((partner.revenue * partner.commission) / 100)).toLocaleString("en-GH")}
+                  </p>
+                  <p className="mt-1 whitespace-nowrap text-[#f0c14d]">
+                    ₦{(partner.revenueYouNgn ?? Math.round((partner.nigeriaRevenue * partner.commission) / 100)).toLocaleString("en-NG")}
+                  </p>
+                </div>
                 <div>
                   <button type="button" disabled={busy} onClick={() => void run(() => deletePartner({ data: { id: partner.id } }))} className="h-7 rounded-lg border border-red/80 px-2 text-[10px] font-extrabold text-red disabled:opacity-60">
                     DELETE
@@ -1201,7 +1210,7 @@ function CommissionRate({ value, disabled, onSave }: { value: number; disabled: 
 }
 
 const partnerCols =
-  "partner-row desk-row grid-cols-[minmax(8rem,1.15fr)_8rem_7rem_minmax(11rem,1.3fr)_10.5rem_9.25rem_8rem_8rem]";
+  "partner-row desk-row grid-cols-[minmax(8rem,1.15fr)_8rem_7rem_minmax(11rem,1.3fr)_10.5rem_9.25rem_8rem_8.5rem_8rem]";
 
 function TransactionHistory({
   payments,

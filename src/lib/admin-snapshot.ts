@@ -44,6 +44,8 @@ export type AdminPartner = {
   referrals: number;
   revenue: number;
   nigeriaRevenue: number;
+  revenueYouGhs: number;
+  revenueYouNgn: number;
 };
 
 export type PartnerPayout = {
@@ -605,6 +607,8 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
       referrals: extra(countBy),
       revenue: extra(ghsBy),
       nigeriaRevenue: extra(ngnBy),
+      revenueYouGhs: commissionAmount(extra(ghsBy), Number(row.commission) || 0),
+      revenueYouNgn: commissionAmount(extra(ngnBy), Number(row.commission) || 0),
     };
   });
   const payoutRows = await sql<{
