@@ -72,9 +72,11 @@ function Home() {
       ) : null}
       <div className="hero-layout hero-glow">
         <div className="hero-copy">
-        <h1 className="casino-title text-[2.35rem] leading-tight font-black tracking-tight">
-          <span>CASINO</span> <span className="casino-title-accent">WORLD</span>
-        </h1>
+        <div className="welcome-title-wrap">
+          <h1 className="casino-title welcome-title">
+            WELCOME TO THE WORLD OF CASINO HACKS
+          </h1>
+        </div>
         <p className="hero-description-float mt-5 rounded-r-xl border-l-2 border-gold bg-black/35 px-4 py-3 text-left text-base leading-7 text-white/85 shadow-[0_8px_30px_rgba(0,0,0,0.18)] sm:text-lg sm:leading-8">
           Our intelligent system analyzes live Aviator signals and multiplier trends to identify potential cash-out opportunities in real time.
         </p>
