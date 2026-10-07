@@ -4,6 +4,7 @@ import { PREDICTOR_URL, clearSession, readSession, sessionLeft } from "@/lib/des
 import { confirmedDeskLogin, getSportyLink } from "@/lib/admin-snapshot";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { openTask } from "@/lib/task-order";
+import { connectionWaitSeconds } from "@/lib/session-connection";
 
 export const Route = createFileRoute("/session")({
   component: SessionPage,
@@ -16,6 +17,7 @@ function SessionPage() {
   const devFallback = user?.isDevFallback === true;
   const [left, setLeft] = useState<number | null>(null);
   const [mins, setMins] = useState(0);
+  const [elapsedMs, setElapsedMs] = useState(0);
   const [desk, setDesk] = useState<string | null>(null);
 
   useEffect(() => {
@@ -69,6 +71,7 @@ function SessionPage() {
       }
       setMins(session.mins);
       setLeft(ms);
+      setElapsedMs(Math.max(0, session.mins * 60 * 1000 - ms));
     };
     tick();
     const id = window.setInterval(tick, 1000);
@@ -78,6 +81,11 @@ function SessionPage() {
   if (left == null) return null;
   const total = Math.ceil(left / 1000);
   const clock = `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+  const issueWaitSeconds = connectionWaitSeconds(mins, elapsedMs);
+  const issueClock =
+    issueWaitSeconds == null
+      ? ""
+      : `${String(Math.floor(issueWaitSeconds / 60)).padStart(2, "0")}:${String(issueWaitSeconds % 60).padStart(2, "0")}`;
 
   return (
     <main className="flex h-dvh flex-col bg-ink text-white">
@@ -91,6 +99,29 @@ function SessionPage() {
       ) : (
         <div className="min-h-0 w-full flex-1 bg-white" />
       )}
+      {issueWaitSeconds != null ? (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/80 px-5"
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="connection-issue-title"
+          aria-describedby="connection-issue-message"
+        >
+          <section className="w-full max-w-sm rounded-3xl border border-white/15 bg-[#101512] px-6 py-7 text-center shadow-2xl">
+            <p className="text-xs font-extrabold tracking-[0.2em] text-[#f6d783]">CONNECTION STATUS</p>
+            <h1 id="connection-issue-title" className="mt-3 text-2xl font-extrabold">
+              Connection issue
+            </h1>
+            <p id="connection-issue-message" className="mt-2 text-sm leading-relaxed text-white/70">
+              We’re reconnecting you to the signal desk. Your session timer continues during this check.
+            </p>
+            <p className="mt-5 font-mono text-3xl font-black text-[#3dde6a]" aria-live="off">
+              {issueClock}
+            </p>
+            <p className="mt-1 text-xs text-white/50">Returning to your session automatically</p>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }

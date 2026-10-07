@@ -1271,6 +1271,9 @@ function TransactionHistory({
               <div className="min-w-0">
                 <p className="truncate font-extrabold">{payment.memberName ?? payment.payerName}</p>
                 <p className="truncate text-sm text-[#6b7280]">{payment.memberEmail ?? "—"}</p>
+                {payment.isTestAccount ? (
+                  <p className="mt-1 text-[10px] font-extrabold text-[#f6d783]">TEST ACCOUNT · EXCLUDED FROM REVENUE</p>
+                ) : null}
               </div>
               <div className="min-w-0">
                 <p className="font-extrabold">{moneyLabel(payment.amount)}</p>
@@ -1447,6 +1450,9 @@ function MemberList({ members }: { members: AdminSnapshot["members"] }) {
                   <div className="min-w-0">
                     <p className="truncate font-extrabold">{member.name}</p>
                     <p className="truncate text-sm text-[#6b7280]">{member.email}</p>
+                    {member.isTestAccount ? (
+                      <p className="mt-1 text-[10px] font-extrabold text-[#f6d783]">TEST ACCOUNT</p>
+                    ) : null}
                   </div>
                   <div className="text-center text-xs leading-4 text-[#6b7280]">
                     <p>{date ? date.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "—"}</p>

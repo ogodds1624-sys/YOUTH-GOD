@@ -135,9 +135,11 @@ function ConnectPage() {
           Enter your SportyBet account number to link it to Casino World.
         </p>
         <div className="my-8 flex justify-center">
-          <span className="sporty-connect-logo grid size-20 place-items-center rounded-[22px] text-5xl font-black text-white" aria-label="SportyBet">
-            S
-          </span>
+          <img
+            src="/media/sportybet-logo.jpg"
+            alt="SportyBet"
+            className="h-32 w-auto rounded-2xl object-contain"
+          />
         </div>
         <form onSubmit={onSubmit}>
             <div className="mt-3 grid min-w-0 grid-cols-[6.25rem_minmax(0,1fr)] gap-2">

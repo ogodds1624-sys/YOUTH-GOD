@@ -108,11 +108,10 @@ function NigeriaPayPage() {
   useEffect(() => {
     if (!amount) return;
     if (result === "confirmed") {
-      const timer = window.setTimeout(() => {
-        clearPendingPayment();
-        void navigate({ to: "/session" });
-      }, confirmPendingPayment(paymentId ?? "", amount));
-      return () => window.clearTimeout(timer);
+      confirmPendingPayment(paymentId ?? "", amount);
+      clearPendingPayment();
+      void navigate({ to: "/session" });
+      return;
     }
     if (result === "rejected") {
       clearPendingPayment();

@@ -16,6 +16,7 @@ export type AdminMember = {
   email: string;
   createdAt: string;
   paid: boolean;
+  isTestAccount: boolean;
   referredBy: string | null;
 };
 
@@ -29,6 +30,7 @@ export type AdminPayment = {
   memberEmail: string | null;
   hasReceipt: boolean;
   countsRevenue: boolean;
+  isTestAccount: boolean;
   confirmedAt: string;
   referredBy: string | null;
   country: "Ghana" | "Nigeria" | null;
@@ -479,8 +481,9 @@ async function ensurePayments(sql: Sql) {
 
 async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
   await ensurePayments(sql);
-  const rows = await sql<{ id: string; name: string; email: string; createdAt: string | Date }>`
-    select user_id as id, name, email, registered_at as "createdAt"
+  const rows = await sql<{ id: string; name: string; email: string; createdAt: string | Date; is_test_account: boolean }>`
+    select user_id as id, name, email, registered_at as "createdAt",
+      exists (select 1 from test_accounts t where t.email = lower(trim(registered_users.email))) as is_test_account
     from registered_users
     order by registered_at desc
   `;
@@ -500,6 +503,7 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
       email: row.email,
       createdAt: Number.isNaN(created.getTime()) ? "" : created.toISOString(),
       paid: paidIds.has(row.id),
+      isTestAccount: row.is_test_account,
       referredBy: referredBy.get(row.id) ?? null,
     };
   });
@@ -513,6 +517,7 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
     member_email: string | null;
     has_receipt: boolean | string;
     counts_revenue: boolean | string | null;
+    is_test_account: boolean;
     confirmed_at: string | Date | null;
     referred_by: string | null;
     country: string | null;
@@ -520,6 +525,7 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
     select p.id, p.payer_name, p.amount, p.status, p.created_at, u.name as member_name, u.email as member_email,
       (p.receipt is not null and p.receipt <> '') as has_receipt,
       p.counts_revenue,
+      exists (select 1 from test_accounts t where t.email = lower(trim(u.email))) as is_test_account,
       coalesce(p.confirmed_at, p.created_at) as confirmed_at,
       coalesce(nullif(p.referred_by, ''), r.referred_by) as referred_by,
       c.country
@@ -543,6 +549,7 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
       memberEmail: row.member_email,
       hasReceipt: row.has_receipt === true || row.has_receipt === "t" || row.has_receipt === "true",
       countsRevenue: status === "confirmed" && !(row.counts_revenue === false || row.counts_revenue === "f" || row.counts_revenue === "false"),
+      isTestAccount: row.is_test_account,
       confirmedAt: status !== "confirmed" || Number.isNaN(confirmed.getTime()) ? "" : confirmed.toISOString(),
       referredBy: row.referred_by,
       country: row.country === "Nigeria" ? "Nigeria" : row.country === "Ghana" ? "Ghana" : null,

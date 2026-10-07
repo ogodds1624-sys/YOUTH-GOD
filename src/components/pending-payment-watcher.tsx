@@ -1,6 +1,6 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CONNECTING_PHONE_MESSAGE, SignalLoading } from "@/components/signal-loading";
+import { SignalLoading } from "@/components/signal-loading";
 import { getPaymentStatus } from "@/lib/admin-snapshot";
 import { clearPendingPayment, confirmPendingPayment, readPendingPayment } from "@/lib/desk-session";
 
@@ -10,7 +10,7 @@ const OWN_SCREEN = ["/pay", "/nigeria-pay", "/admin", "/session"];
 export function PendingPaymentWatcher() {
   const path = useRouterState({ select: (state) => state.location.pathname });
   const navigate = useNavigate();
-  const [state, setState] = useState<"none" | "pending" | "confirmed">("none");
+  const [state, setState] = useState<"none" | "pending">("none");
   const skip = OWN_SCREEN.includes(path);
 
   useEffect(() => {
@@ -19,8 +19,6 @@ export function PendingPaymentWatcher() {
       return;
     }
     let stop = false;
-    let timer: number | undefined;
-    let poll: number | undefined;
 
     function finish(rejected: boolean) {
       clearPendingPayment();
@@ -43,9 +41,8 @@ export function PendingPaymentWatcher() {
             finish(true);
           } else if (row.status === "confirmed") {
             window.clearInterval(poll);
-            setState("confirmed");
-            const wait = confirmPendingPayment(saved.id, saved.amount);
-            timer = window.setTimeout(() => finish(false), wait);
+            confirmPendingPayment(saved.id, saved.amount);
+            finish(false);
           } else {
             setState("pending");
           }
@@ -55,19 +52,14 @@ export function PendingPaymentWatcher() {
         });
     }
 
+    const poll = window.setInterval(check, 3000);
     check();
-    poll = window.setInterval(check, 3000);
     return () => {
       stop = true;
       window.clearInterval(poll);
-      window.clearTimeout(timer);
     };
   }, [skip, navigate]);
 
   if (state === "none") return null;
-  return (
-    <SignalLoading
-      label={state === "confirmed" ? CONNECTING_PHONE_MESSAGE : "waiting for confirmation"}
-    />
-  );
+  return <SignalLoading label="waiting for confirmation" />;
 }

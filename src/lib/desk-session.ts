@@ -16,11 +16,6 @@ export function minutesFor(amount: number) {
   return 3;
 }
 
-export function connectMinutesFor(amount: number) {
-  const mins = minutesFor(amount);
-  return mins >= 15 ? 15 : mins >= 10 ? 7 : 2;
-}
-
 export function startSession(amount: number) {
   const mins = minutesFor(amount);
   const endsAt = Date.now() + mins * 60 * 1000;
@@ -72,14 +67,12 @@ export function clearPendingPayment() {
   window.localStorage.removeItem(PENDING_KEY);
 }
 
-// Starts the session and the connecting delay once; later calls just return the time left, so refreshes never restart it.
+// Starts the purchased session once and records approval without adding a post-payment delay.
 export function confirmPendingPayment(id: string, amount: number) {
   const saved = readPendingPayment();
-  let readyAt = saved && saved.id === id ? saved.readyAt : null;
-  if (readyAt == null) {
+  const matchingPayment = saved?.id === id;
+  if (!matchingPayment || saved.readyAt == null) {
     startSession(amount);
-    readyAt = Date.now() + connectMinutesFor(amount) * 60 * 1000;
-    window.localStorage.setItem(PENDING_KEY, JSON.stringify({ id, amount, readyAt }));
   }
-  return Math.max(0, readyAt - Date.now());
+  window.localStorage.setItem(PENDING_KEY, JSON.stringify({ id, amount, readyAt: Date.now() }));
 }
