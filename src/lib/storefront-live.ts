@@ -27,7 +27,7 @@ export function useLiveStorefront() {
           if (!live) return;
           setStore((current) => (current && sameStore(current, next) ? current : next));
         })
-        .catch(() => undefined);
+        .catch((error: unknown) => console.error("Could not refresh storefront settings.", error));
     };
     load();
     const phone = window.matchMedia("(hover: none) and (pointer: coarse)").matches;

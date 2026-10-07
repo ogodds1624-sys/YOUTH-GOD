@@ -8,16 +8,13 @@ import { CONNECTING_PHONE_MESSAGE, SignalLoading } from "@/components/signal-loa
 import { clearPendingPayment, confirmPendingPayment, readPendingPayment, savePendingPayment } from "@/lib/desk-session";
 import { storedReferral } from "@/lib/remember-ref";
 import { openTask } from "@/lib/task-order";
+import type { PackageId } from "@/lib/pricing";
 
 export const Route = createFileRoute("/nigeria-pay")({
   component: NigeriaPayPage,
 });
 
-const PACKAGES = [
-  { price: 41986, detail: "3 mins per session", icon: Zap },
-  { price: 95968, detail: "10 mins per session", icon: Flame },
-  { price: 203932, detail: "15 mins per session", icon: Gem },
-] as const;
+const PACKAGE_ICONS = { quick: Zap, popular: Flame, extended: Gem };
 
 function naira(amount: number) {
   return `₦${amount.toLocaleString("en-NG")}`;
@@ -32,6 +29,8 @@ function NigeriaPayPage() {
   const [ready, setReady] = useState(false);
   const [choice, setChoice] = useState(0);
   const [amount, setAmount] = useState<number | null>(null);
+  const [minutes, setMinutes] = useState<number | null>(null);
+  const [packageId, setPackageId] = useState<PackageId | undefined>();
   const [showPay, setShowPay] = useState(false);
   const [copied, setCopied] = useState(false);
   const [receiptName, setReceiptName] = useState("");
@@ -81,15 +80,16 @@ function NigeriaPayPage() {
           clearPendingPayment();
           setAlertOn(true);
         } else {
-          setAmount(saved.amount);
+          setAmount(row.amount);
+          setMinutes(row.minutes);
           setShowPay(true);
           setWaiting(true);
           setPaymentId(saved.id);
           if (row.status === "confirmed") setResult("confirmed");
         }
       })
-      .catch(() => {
-        // Keep the saved payment so the next visit can resume waiting.
+      .catch((err: unknown) => {
+        if (!stop) setError(err instanceof Error ? err.message : "Could not restore your payment. Reload to retry.");
       });
     return () => {
       stop = true;
@@ -100,8 +100,10 @@ function NigeriaPayPage() {
     if (!paymentId || result !== "pending") return;
     const timer = window.setInterval(() => {
       void getPaymentStatus({ data: { id: paymentId } }).then((row) => {
+        setAmount(row.amount);
+        setMinutes(row.minutes);
         if (row.status === "confirmed" || row.status === "rejected") setResult(row.status);
-      });
+      }).catch((err: unknown) => setError(err instanceof Error ? err.message : "Could not check payment approval. Retrying."));
     }, 3000);
     return () => window.clearInterval(timer);
   }, [paymentId, result]);
@@ -109,7 +111,11 @@ function NigeriaPayPage() {
   useEffect(() => {
     if (!amount) return;
     if (result === "confirmed") {
-      confirmPendingPayment(paymentId ?? "", amount);
+      if (minutes == null) {
+        setError("The purchased session duration is missing. Reload checkout to retry.");
+        return;
+      }
+      confirmPendingPayment(paymentId ?? "", amount, minutes);
       clearPendingPayment();
       void navigate({ to: "/session" });
       return;
@@ -125,9 +131,11 @@ function NigeriaPayPage() {
       setResult("pending");
       setShowPay(false);
       setAmount(null);
+      setMinutes(null);
+      setPackageId(undefined);
       setAlertOn(true);
     }
-  }, [result, amount, navigate]);
+  }, [result, amount, minutes, navigate, paymentId]);
 
   const accounts = store?.nigeriaAccounts ?? [];
   const selected = accounts[choice] ?? accounts[0];
@@ -186,9 +194,11 @@ function NigeriaPayPage() {
     sendingRef.current = true;
     setSending(true);
     try {
-      const saved = await recordPayment({ data: { name: "", amount, receipt, referredBy: storedReferral() } });
+      const saved = await recordPayment({ data: { name: "", amount, minutes, packageId, receipt, referredBy: storedReferral() } });
+      setAmount(saved.amount);
+      setMinutes(saved.minutes);
       setPaymentId(saved.id);
-      savePendingPayment(saved.id, amount);
+      savePendingPayment(saved.id, saved.amount);
       setWaiting(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not send that payment.");
@@ -200,7 +210,7 @@ function NigeriaPayPage() {
   const waitingLabel =
     result === "confirmed" ? CONNECTING_PHONE_MESSAGE : result === "rejected" ? "payment rejected" : "waiting for confirmation";
 
-  if (!ready) {
+  if (!ready || !store) {
     return (
       <main className="grid min-h-dvh place-items-center bg-ink">
         <SignalLoading />
@@ -231,18 +241,18 @@ function NigeriaPayPage() {
           <p className="package-subtitle">Buy session time · Use anytime</p>
           {error ? <p className="mt-4 text-center text-sm font-bold text-red">{error}</p> : null}
           <div className="mt-6 space-y-4">
-            {PACKAGES.map((pack, index) => {
-              const Icon = pack.icon;
+            {store.pricing.Nigeria.packages.map((pack, index) => {
+              const Icon = PACKAGE_ICONS[pack.id];
               return (
-                <article key={pack.price} className="package-card">
+                <article key={pack.id} className="package-card">
                   <div className="package-card-top">
                     <div className="package-price-block">
                       <h2 className="package-price">
                         <span>₦</span> {pack.price.toLocaleString("en-NG")}
                       </h2>
                     </div>
-                      <span className={"package-card-icon" + (pack.price === 41986 ? " package-card-icon-gold" : pack.price === 95968 ? " package-card-icon-gold package-card-icon-platinum" : pack.price === 203932 ? " package-card-icon-gold package-card-icon-diamond" : "")}>
-                        {pack.price === 41986 ? (
+                      <span className={"package-card-icon" + (pack.id === "quick" ? " package-card-icon-gold" : pack.id === "popular" ? " package-card-icon-gold package-card-icon-platinum" : " package-card-icon-gold package-card-icon-diamond")}>
+                        {pack.id === "quick" ? (
                           <svg className="package-gold-bar" viewBox="0 0 48 48" fill="none" aria-hidden="true">
                             <defs>
                               <linearGradient id="coin-face" x1="8" y1="6" x2="40" y2="30" gradientUnits="userSpaceOnUse">
@@ -265,7 +275,7 @@ function NigeriaPayPage() {
                             <path d="M14 12.500c3-1.500 9-1.800 13-.600" stroke="#fff" strokeWidth="1" strokeLinecap="round" opacity=".75" />
                             <path d="M38 7l1.200 2.800L42 11l-2.800 1.200L38 15l-1.200-2.800L34 11l2.800-1.200L38 7Z" fill="#FFF3B0" />
                           </svg>
-                        ) : pack.price === 95968 ? (
+                        ) : pack.id === "popular" ? (
                           <svg className="package-gold-bar" viewBox="0 0 48 48" fill="none" aria-hidden="true">
                             <defs>
                               <linearGradient id="plat-face" x1="8" y1="6" x2="40" y2="42" gradientUnits="userSpaceOnUse">
@@ -286,7 +296,7 @@ function NigeriaPayPage() {
                             <path d="M13 17c2-4 6-6.500 10-6.800" stroke="#fff" strokeWidth="1.400" strokeLinecap="round" opacity=".85" />
                             <path d="M40 6l1 2.400L43.400 9.400 41 10.400 40 12.800l-1-2.400-2.400-1L39 8.400 40 6Z" fill="#fff" />
                           </svg>
-                        ) : pack.price === 203932 ? (
+                        ) : pack.id === "extended" ? (
                           <svg className="package-gold-bar" viewBox="0 0 48 48" fill="none" aria-hidden="true">
                             <defs>
                               <linearGradient id="dia-top" x1="8" y1="8" x2="40" y2="20" gradientUnits="userSpaceOnUse">
@@ -313,7 +323,7 @@ function NigeriaPayPage() {
                   <div className="package-card-meta">
                     <p className="package-duration">
                       <Clock3 aria-hidden />
-                      {pack.detail}
+                      {pack.minutes} mins per session
                     </p>
                     <span className="package-availability">
                       <span aria-hidden="true" />
@@ -324,6 +334,8 @@ function NigeriaPayPage() {
                     type="button"
                     onClick={() => {
                       setAmount(pack.price);
+                      setMinutes(pack.minutes);
+                      setPackageId(pack.id);
                       setShowPay(true);
                     }}
                     style={{ animationDelay: `${index * 0.2}s` }}
@@ -374,6 +386,7 @@ function NigeriaPayPage() {
           </button>
         </div>
         <h1 className="mt-3 text-2xl font-extrabold tracking-tight">Pay by bank transfer</h1>
+        <p className="mt-2 text-sm text-white/65">{minutes} mins per session</p>
         <p className="mt-3 text-4xl font-extrabold tracking-tight text-[#3dde6a]">{naira(amount)} NGN</p>
         {!store ? (
           <p className="mt-6 text-sm text-white/70">Loading checkout…</p>

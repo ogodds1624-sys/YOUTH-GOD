@@ -5,7 +5,8 @@ A responsive casino dashboard for game outcome predictions, user management, pay
 ## Account activation
 
 After connecting a SportyBet number, users must pay a one-time activation fee:
-GHS 50 in Ghana or NGN 7,000 in Nigeria. The activation page reuses the configured
+By default, GHS 45 in Ghana or NGN 6,000 in Nigeria. Admins can change these fees
+under **Pricing & Packages**. The activation page reuses the configured
 MoMo/bank transfer details and requires a receipt. Admin approval unlocks session
 packages; activation alone does not start or purchase a timed session. This
 requirement also applies to previously connected accounts.
@@ -22,6 +23,24 @@ Package checkout and session access require server-confirmed activation; changin
 the URL or local session storage does not unlock this stage. Receipt submission
 locks on the first tap and immediately shows sending feedback. Referral recording
 is handled by the payment request rather than a separate blocking request.
+
+## Admin pricing and package duration
+
+Open **Admin > Pricing & Packages** to edit the activation fee, the price, and
+the session minutes for each of the three tiers in Ghana and Nigeria. Prices
+must be positive whole currency units, package prices within a country must be
+distinct, and session lengths must be whole minutes from 1 to 1,440. Save both
+countries with **Save prices & minutes**; changes persist in the database and
+customer menus refresh through the existing storefront polling.
+
+Migration `0011_admin_pricing.sql` seeds GHS 45 / NGN 6,000 activation fees and
+the existing 3-, 10-, and 15-minute packages. Checkout validates against saved
+country-specific pricing, not a price supplied in a URL. An open checkout keeps
+its quoted price and duration; if pricing changes before submission, the user
+must reload and review the new quote. Submitted payments retain their price,
+country, and purchased minutes, including after admin approval or a page reload.
+Later pricing edits do not change pending payments, historical revenue, or
+active session timers. Activation fees never start a timed session.
 
 ## Session connection popups
 

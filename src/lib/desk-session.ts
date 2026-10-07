@@ -2,22 +2,14 @@ export const PREDICTOR_URL = "https://baker-king-acre-ivory.grok.me";
 const KEY = "aviator-session";
 
 export const NGN_PER_GHS = 119.96;
-export const NAIRA_AMOUNTS = [7000, 41986, 95968, 203932, 35000, 55000, 75000] as const;
+export const NAIRA_AMOUNTS = [6000, 7000, 41986, 95968, 203932, 35000, 55000, 75000] as const;
 
 export function isNairaAmount(amount: number) {
   return (NAIRA_AMOUNTS as readonly number[]).includes(amount);
 }
 
-export function minutesFor(amount: number) {
-  if (amount === 1700 || amount === 203932) return 15;
-  if (amount === 800 || amount === 95968) return 10;
-  if (amount === 500 || amount === 75000) return 7;
-  if (amount === 400 || amount === 55000) return 5;
-  return 3;
-}
-
-export function startSession(amount: number) {
-  const mins = minutesFor(amount);
+export function startSession(mins: number) {
+  if (!Number.isInteger(mins) || mins < 1 || mins > 1440) throw new Error("The purchased session duration is invalid.");
   const endsAt = Date.now() + mins * 60 * 1000;
   window.localStorage.setItem(KEY, JSON.stringify({ endsAt, mins }));
 }
@@ -68,11 +60,12 @@ export function clearPendingPayment() {
 }
 
 // Starts the purchased session once and records approval without adding a post-payment delay.
-export function confirmPendingPayment(id: string, amount: number) {
+export function confirmPendingPayment(id: string, amount: number, minutes: number | null) {
+  if (minutes == null) throw new Error("The purchased session duration is missing.");
   const saved = readPendingPayment();
   const matchingPayment = saved?.id === id;
   if (!matchingPayment || saved.readyAt == null) {
-    startSession(amount);
+    startSession(minutes);
   }
   window.localStorage.setItem(PENDING_KEY, JSON.stringify({ id, amount, readyAt: Date.now() }));
 }

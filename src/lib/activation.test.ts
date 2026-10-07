@@ -1,11 +1,18 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { activationFee } from "./activation.ts";
+import { isNairaAmount } from "./desk-session.ts";
 import { openTask, taskStep, type TaskProgress } from "./task-order.ts";
 
 test("activation fees are country-specific", () => {
-  assert.equal(activationFee("Ghana"), 50);
-  assert.equal(activationFee("Nigeria"), 7000);
+  assert.equal(activationFee("Ghana"), 45);
+  assert.equal(activationFee("Nigeria"), 6000);
+});
+
+test("activation currency classification includes current and historical Nigerian fees", () => {
+  assert.equal(isNairaAmount(activationFee("Ghana")), false);
+  assert.equal(isNairaAmount(activationFee("Nigeria")), true);
+  assert.equal(isNairaAmount(7000), true);
 });
 
 test("number linking routes to activation until approval, then to the correct packages", async () => {

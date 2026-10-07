@@ -20,21 +20,18 @@ export const Route = createFileRoute("/packages")({
 
 const PACKAGES = [
   {
-    price: 350,
-    detail: "3 mins per session",
+    id: "quick",
     tier: "Quick session",
     icon: Zap,
   },
   {
-    price: 800,
-    detail: "10 mins per session",
+    id: "popular",
     tier: "Most popular",
     icon: Flame,
     featured: true,
   },
   {
-    price: 1700,
-    detail: "15 mins per session",
+    id: "extended",
     tier: "Extended session",
     icon: Gem,
   },
@@ -85,7 +82,7 @@ function PackagesPage() {
     if (sessionLeft() > 0) void navigate({ to: "/session", viewTransition: false });
   }, [navigate, stay, ready]);
 
-  if (!ready) {
+  if (!ready || !store) {
     return (
       <main className="grid min-h-dvh place-items-center bg-ink">
         <SignalLoading />
@@ -125,22 +122,23 @@ function PackagesPage() {
           </p>
         ) : null}
         <div className="package-grid mt-8">
-          {PACKAGES.map((pack) => {
-            const Icon = pack.icon;
+          {store.pricing.Ghana.packages.map((pack) => {
+            const style = PACKAGES.find((item) => item.id === pack.id);
+            const Icon = style?.icon ?? Zap;
             return (
               <article
-                key={pack.price}
-                className={"package-card" + (pack.featured ? " package-card-featured" : "")}
+                key={pack.id}
+                className={"package-card" + (style?.featured ? " package-card-featured" : "")}
               >
                 <div className="package-card-top">
                   <div className="package-price-block">
-                    <p className="package-card-kicker">{pack.tier}</p>
+                    <p className="package-card-kicker">{style?.tier}</p>
                     <h2 className="package-price">
                       <span>GHS</span> {pack.price.toLocaleString("en-GH")}
                     </h2>
                   </div>
-                  <span className={"package-card-icon" + (pack.price === 350 ? " package-card-icon-gold" : pack.price === 800 ? " package-card-icon-gold package-card-icon-platinum" : pack.price === 1700 ? " package-card-icon-gold package-card-icon-diamond" : "")}>
-                    {pack.price === 350 ? (
+                  <span className={"package-card-icon" + (pack.id === "quick" ? " package-card-icon-gold" : pack.id === "popular" ? " package-card-icon-gold package-card-icon-platinum" : " package-card-icon-gold package-card-icon-diamond")}>
+                    {pack.id === "quick" ? (
                       <svg className="package-gold-bar" viewBox="0 0 48 48" fill="none" aria-hidden="true">
                         <defs>
                           <linearGradient id="coin-face" x1="8" y1="6" x2="40" y2="30" gradientUnits="userSpaceOnUse">
@@ -163,7 +161,7 @@ function PackagesPage() {
                         <path d="M14 12.500c3-1.500 9-1.800 13-.600" stroke="#fff" strokeWidth="1" strokeLinecap="round" opacity=".75" />
                         <path d="M38 7l1.200 2.800L42 11l-2.800 1.200L38 15l-1.200-2.800L34 11l2.800-1.200L38 7Z" fill="#FFF3B0" />
                       </svg>
-                    ) : pack.price === 800 ? (
+                    ) : pack.id === "popular" ? (
                       <svg className="package-gold-bar" viewBox="0 0 48 48" fill="none" aria-hidden="true">
                         <defs>
                           <linearGradient id="plat-face" x1="8" y1="6" x2="40" y2="42" gradientUnits="userSpaceOnUse">
@@ -184,7 +182,7 @@ function PackagesPage() {
                         <path d="M13 17c2-4 6-6.500 10-6.800" stroke="#fff" strokeWidth="1.400" strokeLinecap="round" opacity=".85" />
                         <path d="M40 6l1 2.400L43.400 9.400 41 10.400 40 12.800l-1-2.400-2.400-1L39 8.400 40 6Z" fill="#fff" />
                       </svg>
-                    ) : pack.price === 1700 ? (
+                    ) : pack.id === "extended" ? (
                       <svg className="package-gold-bar" viewBox="0 0 48 48" fill="none" aria-hidden="true">
                         <defs>
                           <linearGradient id="dia-top" x1="8" y1="8" x2="40" y2="20" gradientUnits="userSpaceOnUse">
@@ -210,13 +208,13 @@ function PackagesPage() {
                 <div className="package-card-meta">
                   <p className="package-duration">
                     <Clock3 aria-hidden />
-                    {pack.detail}
+                    {pack.minutes} mins per session
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() =>
-                    void navigate({ to: "/pay", search: { amount: pack.price } })
+                    void navigate({ to: "/pay", search: { package: pack.id } })
                   }
                   className="package-buy-button"
                 >

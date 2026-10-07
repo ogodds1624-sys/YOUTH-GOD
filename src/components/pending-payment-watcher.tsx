@@ -55,7 +55,7 @@ export function PendingPaymentWatcher() {
             finish(true);
           } else if (row.status === "confirmed") {
             window.clearInterval(poll);
-            confirmPendingPayment(saved.id, saved.amount);
+            confirmPendingPayment(saved.id, row.amount, row.minutes);
             finish(false);
           } else {
             setState("pending");

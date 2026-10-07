@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { adminAuthMiddleware } from "@/lib/admin-auth";
 import type { Sql } from "@/lib/db";
 import { isNairaAmount } from "@/lib/desk-session";
-import { activationFee, type PaymentPurpose } from "@/lib/activation";
+import type { PaymentPurpose } from "@/lib/activation";
+import { validatePricing, validatePaymentQuote, type PricingSettings } from "@/lib/pricing";
 import {
   availablePartnerEarnings,
   commissionAmount,
@@ -26,6 +27,7 @@ export type AdminPayment = {
   purpose: PaymentPurpose;
   payerName: string;
   amount: number;
+  minutes: number | null;
   status: "pending" | "confirmed" | "rejected";
   createdAt: string;
   memberName: string | null;
@@ -154,6 +156,7 @@ export type AdminSnapshot = {
   testimonies: AdminTestimony[];
   blocked: { email: string; createdAt: string }[];
   gateway: GatewaySettings;
+  pricing: PricingSettings;
   total: number;
   today: number;
   revenue: number;
@@ -514,6 +517,7 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
     payer_name: string;
     purpose: PaymentPurpose;
     amount: number | string;
+    session_minutes: number | null;
     status: string;
     created_at: string | Date;
     member_name: string | null;
@@ -525,13 +529,13 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
     referred_by: string | null;
     country: string | null;
   }>`
-    select p.id, p.purpose, p.payer_name, p.amount, p.status, p.created_at, u.name as member_name, u.email as member_email,
+    select p.id, p.purpose, p.payer_name, p.amount, p.session_minutes, p.status, p.created_at, u.name as member_name, u.email as member_email,
       (p.receipt is not null and p.receipt <> '') as has_receipt,
       p.counts_revenue,
       exists (select 1 from test_accounts t where t.email = lower(trim(u.email))) as is_test_account,
       coalesce(p.confirmed_at, p.created_at) as confirmed_at,
       coalesce(nullif(p.referred_by, ''), r.referred_by) as referred_by,
-      c.country
+      coalesce(p.country, c.country) as country
     from payments p
     left join "user" u on u.id = p.user_id
     left join referrals r on r.user_id = p.user_id
@@ -547,6 +551,7 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
       purpose: row.purpose,
       payerName: row.payer_name,
       amount: Number(row.amount),
+      minutes: row.session_minutes,
       status,
       createdAt: Number.isNaN(created.getTime()) ? "" : created.toISOString(),
       memberName: row.member_name,
@@ -574,12 +579,12 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
   const referralRevenue = await sql<{ referred_by: string; ghs: number | string; ngn: number | string }>`
     select lower(partner.code) as referred_by,
       coalesce(sum(case when
-        c.country = 'Nigeria'
-        or (c.country is distinct from 'Ghana' and p.amount in (41986, 95968, 203932, 35000, 55000, 75000))
+        coalesce(p.country, c.country) = 'Nigeria'
+        or (coalesce(p.country, c.country) is distinct from 'Ghana' and p.amount in (6000, 7000, 41986, 95968, 203932, 35000, 55000, 75000))
         then 0 else p.amount end), 0) as ghs,
       coalesce(sum(case when
-        c.country = 'Nigeria'
-        or (c.country is distinct from 'Ghana' and p.amount in (41986, 95968, 203932, 35000, 55000, 75000))
+        coalesce(p.country, c.country) = 'Nigeria'
+        or (coalesce(p.country, c.country) is distinct from 'Ghana' and p.amount in (6000, 7000, 41986, 95968, 203932, 35000, 55000, 75000))
         then p.amount else 0 end), 0) as ngn
     from payments p
     left join referrals r on r.user_id = p.user_id
@@ -697,6 +702,8 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
     southAfrica: Number(gatewayRow?.south_africa ?? 0),
     checkout,
   };
+  const { readPricing } = await import("@/lib/pricing.server");
+  const pricing = await readPricing(sql);
   const todayKey = accraDayKey(new Date());
   const today = members.filter((member) => member.createdAt && accraDayKey(member.createdAt) === todayKey).length;
   const testimonyRows = await sql<{
@@ -735,6 +742,7 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
     testimonies,
     blocked,
     gateway,
+    pricing,
     total: members.length,
     today,
     revenue: confirmedPayments.reduce((sum, payment) => sum + payment.amount, 0),
@@ -862,6 +870,7 @@ export const checkAdminSession = createServerFn({ method: "GET" }).handler(async
 });
 
 export type Storefront = {
+  pricing: PricingSettings;
   businessName: string;
   whatsapp: string;
   email: string;
@@ -886,6 +895,7 @@ export const getStorefront = createServerFn({ method: "GET" })
       { country: "South Africa", unit: "R", perGhs: snapshot.gateway.southAfrica },
     ].filter((rate) => rate.perGhs > 0);
     return {
+      pricing: snapshot.pricing,
       businessName: checkout.businessName || "Casino",
       whatsapp: checkout.whatsapp,
       email: checkout.email,
@@ -909,10 +919,12 @@ export const getPaymentStatus = createServerFn({ method: "POST" })
     if (!user) throw new Error("Sign in to check your payment.");
     const sql = await getSql();
     await ensurePayments(sql);
-    const rows = await sql<{ status: string; purpose: PaymentPurpose }>`select status, purpose from payments where id = ${data.id} and user_id = ${user.id}`;
+    const rows = await sql<{ status: string; purpose: PaymentPurpose; amount: number; session_minutes: number | null }>`
+      select status, purpose, amount, session_minutes from payments where id = ${data.id} and user_id = ${user.id}
+    `;
     if (!rows[0]) throw new Error("This payment could not be found for your account.");
     const status = rows[0].status;
-    return { status: status === "confirmed" || status === "rejected" ? status : "pending", purpose: rows[0].purpose };
+    return { status: status === "confirmed" || status === "rejected" ? status : "pending", purpose: rows[0].purpose, amount: Number(rows[0].amount), minutes: rows[0].session_minutes };
   });
 
 export const hasPaidAccess = createServerFn({ method: "GET" }).handler(async () => {
@@ -931,7 +943,7 @@ export const hasPaidAccess = createServerFn({ method: "GET" }).handler(async () 
 });
 
 export const recordPayment = createServerFn({ method: "POST" })
-  .inputValidator((data: { name: string; amount: number; receipt?: string; referredBy?: string; purpose?: PaymentPurpose }) => {
+  .inputValidator((data: { name: string; amount: number; receipt?: string; referredBy?: string; purpose?: PaymentPurpose; packageId?: string; minutes?: number | null }) => {
     const name = data?.name?.trim() ?? "";
     const amount = Number(data?.amount);
     const receipt = typeof data?.receipt === "string" ? data.receipt : "";
@@ -940,8 +952,10 @@ export const recordPayment = createServerFn({ method: "POST" })
     const purpose = data.purpose ?? "session";
     if (purpose !== "session" && purpose !== "activation") throw new Error("Unknown payment purpose.");
     if (purpose === "activation" && !receipt) throw new Error("Attach a screenshot of your activation payment.");
-    if (purpose === "activation" ? ![50, 7000].includes(amount) : ![300, 350, 400, 500, 800, 1700, 41986, 95968, 203932, 35000, 55000, 75000].includes(amount)) throw new Error("Unknown payment amount.");
-    return { name, amount, receipt, referredBy, purpose };
+    if (!Number.isInteger(amount) || amount < 1 || amount > 2_147_483_647) throw new Error("Enter a valid payment amount.");
+    if (data.packageId !== undefined && typeof data.packageId !== "string") throw new Error("Unknown package.");
+    if (data.minutes != null && (!Number.isInteger(data.minutes) || data.minutes < 1 || data.minutes > 1440)) throw new Error("Enter valid session minutes.");
+    return { name, amount, receipt, referredBy, purpose, packageId: data.packageId, minutes: data.minutes };
   })
   .handler(async ({ data }) => {
     const { getSql } = await import("@/lib/db");
@@ -953,15 +967,16 @@ export const recordPayment = createServerFn({ method: "POST" })
     const link = await getSportyLink();
     if (!link.linked || !link.country) throw new Error("Connect your SportyBet number first.");
     if (data.purpose === "activation") {
-      if (data.amount !== activationFee(link.country)) throw new Error("Incorrect activation fee for your country.");
       if (link.activated) throw new Error("Your account is already activated.");
-      const existing = await sql<{ id: string }>`
-        select id from payments where user_id = ${sessionUser.id} and purpose = 'activation' and status = 'pending'
+      const existing = await sql<{ id: string; amount: number; session_minutes: number | null }>`
+        select id, amount, session_minutes from payments where user_id = ${sessionUser.id} and purpose = 'activation' and status = 'pending'
       `;
-      if (existing[0]) return { ok: true, id: existing[0].id };
+      if (existing[0]) return { ok: true, id: existing[0].id, amount: Number(existing[0].amount), minutes: existing[0].session_minutes };
     } else if (!link.activated) {
       throw new Error("Your activation payment must be approved before buying a session.");
     }
+    const { readPricing } = await import("@/lib/pricing.server");
+    const quote = validatePaymentQuote(await readPricing(sql), link.country, data);
     let referredBy = "";
     if (sessionUser) {
       const refs = await sql<{ referred_by: string }>`
@@ -981,19 +996,19 @@ export const recordPayment = createServerFn({ method: "POST" })
       `;
     }
     const id = crypto.randomUUID();
-    const saved = await sql<{ id: string }>`
-      insert into payments (id, payer_name, amount, status, user_id, referred_by, receipt, purpose)
-      select ${id}, ${data.name}, ${data.amount}, 'pending', ${sessionUser.id}, ${referredBy}, ${data.receipt}, ${data.purpose}
+    const saved = await sql<{ id: string; amount: number; session_minutes: number | null }>`
+      insert into payments (id, payer_name, amount, status, user_id, referred_by, receipt, purpose, package_id, session_minutes, country)
+      select ${id}, ${data.name}, ${quote.amount}, 'pending', ${sessionUser.id}, ${referredBy}, ${data.receipt}, ${data.purpose}, ${quote.packageId}, ${quote.minutes}, ${link.country}
       where ${data.purpose} = 'activation' or exists (
         select 1 from payments a
         where a.user_id = ${sessionUser.id} and a.purpose = 'activation' and a.status = 'confirmed'
       )
       on conflict (user_id) where purpose = 'activation' and status in ('pending', 'confirmed') do update
       set user_id = excluded.user_id
-      returning id
+      returning id, amount, session_minutes
     `;
     if (!saved[0]) throw new Error("Your activation payment must be approved before buying a session.");
-    return { ok: true, id: saved[0].id };
+    return { ok: true, id: saved[0].id, amount: Number(saved[0].amount), minutes: saved[0].session_minutes };
   });
 
 export const getPaymentProof = createServerFn({ method: "POST" })
@@ -1724,7 +1739,7 @@ export const getPartnerPortal = createServerFn({ method: "POST" })
 
 async function partnerConfirmedPayments(sql: Sql, code: string) {
   return sql<{ amount: number | string; created_at: string | Date; user_id: string; country: string | null }>`
-      select p.amount, coalesce(p.confirmed_at, p.created_at) as created_at, p.user_id, c.country
+      select p.amount, coalesce(p.confirmed_at, p.created_at) as created_at, p.user_id, coalesce(p.country, c.country) as country
       from payments p
       left join referrals r on r.user_id = p.user_id
       left join player_country c on c.user_id = p.user_id
@@ -1813,6 +1828,18 @@ export const requestPartnerPayout = createServerFn({ method: "POST" })
     `;
     if (inserted.length === 0) throw new Error("Yesterday's earnings for this currency have already been requested or paid.");
     return { requested: true };
+  });
+
+export const savePricing = createServerFn({ method: "POST" })
+  .middleware([adminAuthMiddleware])
+  .inputValidator((data: PricingSettings) => validatePricing(data))
+  .handler(async ({ data }) => {
+    const { getSql } = await import("@/lib/db");
+    const { writePricing } = await import("@/lib/pricing.server");
+    const sql = await getSql();
+    await ensurePayments(sql);
+    await writePricing(sql, data);
+    return readSnapshot(sql);
   });
 
 export const saveGatewayRates = createServerFn({ method: "POST" })

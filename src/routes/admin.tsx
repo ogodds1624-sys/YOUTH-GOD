@@ -16,6 +16,7 @@ import {
   GHANA_MOMO_NETWORKS,
   GHANA_TZ,
   liveDayLabel,
+  isNairaPayment,
   NIGERIA_TZ,
   shiftDayKey,
   rejectPayment,
@@ -36,7 +37,8 @@ import {
   type MomoWallet,
 } from "@/lib/admin-snapshot";
 import { bumpGateway } from "@/lib/storefront-live";
-import { isNairaAmount } from "@/lib/desk-session";
+import { DEFAULT_PRICING } from "@/lib/pricing";
+import { AdminPricing } from "@/components/admin-pricing";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -50,27 +52,13 @@ const NAV = [
   { id: "payouts", label: "PARTNER PAYOUTS", icon: Wallet },
   { id: "block", label: "BLOCK", icon: Ban },
   { id: "gateway", label: "PAYMENT GATEWAY", icon: Wallet },
+  { id: "pricing", label: "PRICING & PACKAGES", icon: Wallet },
 ] as const;
 
 type Tab = (typeof NAV)[number]["id"];
 
-const PACKAGE_NOTE: Record<number, string> = {
-  300: "3 mins per session",
-  350: "3 mins per session",
-  400: "5 mins per session",
-  800: "10 mins per session",
-  500: "7 mins per session",
-  1700: "15 mins per session",
-  41986: "3 mins per session",
-  95968: "10 mins per session",
-  203932: "15 mins per session",
-  35000: "3 mins per session",
-  55000: "5 mins per session",
-  75000: "7 mins per session",
-};
-
-function moneyLabel(amount: number) {
-  return isNairaAmount(amount)
+function moneyLabel(amount: number, country?: string | null) {
+  return isNairaPayment(amount, country)
     ? `₦${amount.toLocaleString("en-NG")}`
     : `GHS ${amount.toLocaleString("en-GH")}`;
 }
@@ -124,6 +112,7 @@ const EMPTY_CHECKOUT: GatewayCheckout = {
 };
 
 const EMPTY_SNAPSHOT: AdminSnapshot = {
+  pricing: DEFAULT_PRICING,
   members: [],
   payments: [],
   partners: [],
@@ -213,8 +202,8 @@ function AdminPage() {
               const who = latest.memberName ?? (latest.payerName || "A player");
               const text =
                 fresh.length === 1
-                  ? `${who} sent ${moneyLabel(latest.amount)}`
-                  : `${fresh.length} new payments · ${who} sent ${moneyLabel(latest.amount)}`;
+                  ? `${who} sent ${moneyLabel(latest.amount, latest.country)}`
+                  : `${fresh.length} new payments · ${who} sent ${moneyLabel(latest.amount, latest.country)}`;
               setNotice(text);
               window.localStorage.setItem("aviator-tx-notice", text);
             }
@@ -307,14 +296,13 @@ function AdminPage() {
   }
 
   const view = snapshot ?? EMPTY_SNAPSHOT;
-  const nairaAmount = isNairaAmount;
   const now = new Date();
   const ghanaToday = dayKeyInZone(now, GHANA_TZ);
   const nigeriaToday = dayKeyInZone(now, NIGERIA_TZ);
   const confirmed = view.payments.filter((payment) => payment.status === "confirmed" && payment.countsRevenue);
   const onDay = (iso: string, key: string, timeZone: string) => Boolean(iso) && dayKeyInZone(iso, timeZone) === key;
-  const ghanaPayments = confirmed.filter((payment) => !nairaAmount(payment.amount));
-  const nigeriaPayments = confirmed.filter((payment) => nairaAmount(payment.amount));
+  const ghanaPayments = confirmed.filter((payment) => !isNairaPayment(payment.amount, payment.country));
+  const nigeriaPayments = confirmed.filter((payment) => isNairaPayment(payment.amount, payment.country));
   const ghanaRevenue = ghanaPayments.reduce((sum, payment) => sum + payment.amount, 0);
   const nigeriaRevenue = nigeriaPayments.reduce((sum, payment) => sum + payment.amount, 0);
   const ghanaDaily = ghanaPayments.filter((payment) => onDay(payment.confirmedAt, ghanaToday, GHANA_TZ)).reduce((sum, payment) => sum + payment.amount, 0);
@@ -525,6 +513,8 @@ function AdminPage() {
             <PartnerPayoutDesk payouts={view.payouts} busy={spinning} onChange={setSnapshot} onBusy={setSpinning} />
           ) : tab === "block" ? (
             <BlockDesk rows={view.blocked} busy={spinning} onChange={setSnapshot} onBusy={setSpinning} />
+          ) : tab === "pricing" ? (
+            snapshot ? <AdminPricing pricing={snapshot.pricing} busy={spinning} onChange={setSnapshot} onBusy={setSpinning} /> : <p className="mt-6">Loading pricing…</p>
           ) : (
             <PaymentGateway  gateway={view.gateway} busy={spinning} onChange={setSnapshot} onBusy={setSpinning} />
           )}
@@ -1276,8 +1266,8 @@ function TransactionHistory({
                 ) : null}
               </div>
               <div className="min-w-0">
-                <p className="font-extrabold">{moneyLabel(payment.amount)}</p>
-                <p className="text-sm text-[#6b7280]">{payment.purpose === "activation" ? "One-time activation fee" : PACKAGE_NOTE[payment.amount] ?? ""}</p>
+                <p className="font-extrabold">{moneyLabel(payment.amount, payment.country)}</p>
+                <p className="text-sm text-[#6b7280]">{payment.purpose === "activation" ? "One-time activation fee" : `${payment.minutes} mins per session`}</p>
               </div>
               <div className="min-w-0">
                 {payment.hasReceipt ? (
@@ -1537,14 +1527,13 @@ function WeekRevenue({ payments, country }: { payments: AdminSnapshot["payments"
     const id = window.setInterval(() => setNow(new Date()), 30000);
     return () => window.clearInterval(id);
   }, []);
-  const nairaAmount = isNairaAmount;
   const timeZone = country === "Nigeria" ? NIGERIA_TZ : GHANA_TZ;
   const todayKey = dayKeyInZone(now, timeZone);
   const rows = Array.from({ length: 7 }, (_, index) => {
     const key = shiftDayKey(todayKey, index - 6, timeZone);
     const approved = payments.filter((payment) => payment.status === "confirmed" && payment.countsRevenue && payment.confirmedAt && dayKeyInZone(payment.confirmedAt, timeZone) === key);
-    const ghana = approved.filter((payment) => !nairaAmount(payment.amount)).reduce((sum, payment) => sum + payment.amount, 0);
-    const nigeria = approved.filter((payment) => nairaAmount(payment.amount)).reduce((sum, payment) => sum + payment.amount, 0);
+    const ghana = approved.filter((payment) => !isNairaPayment(payment.amount, payment.country)).reduce((sum, payment) => sum + payment.amount, 0);
+    const nigeria = approved.filter((payment) => isNairaPayment(payment.amount, payment.country)).reduce((sum, payment) => sum + payment.amount, 0);
     return {
       key,
       label: liveDayLabel(key, timeZone),

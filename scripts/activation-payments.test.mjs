@@ -24,9 +24,9 @@ test("activation is a separate one-time payment and preserves test-account exclu
     assert.equal((await db.query("select purpose from payments where id = 'legacy'")).rows[0].purpose, "session");
     await db.exec(`
       insert into payments (id, user_id, amount, status, purpose) values
-        ('gh-activation', 'ghana', 50, 'pending', 'activation'),
-        ('ng-activation', 'nigeria', 7000, 'pending', 'activation'),
-        ('test-activation', 'test', 50, 'pending', 'activation');
+        ('gh-activation', 'ghana', 45, 'pending', 'activation'),
+        ('ng-activation', 'nigeria', 6000, 'pending', 'activation'),
+        ('test-activation', 'test', 45, 'pending', 'activation');
     `);
     const activated = async (userId) => (await db.query(`
       select exists (select 1 from payments where user_id = $1
@@ -52,24 +52,24 @@ test("activation is a separate one-time payment and preserves test-account exclu
     assert.deepEqual(await submitSession("blocked-pending", "ghana"), []);
     await assert.rejects(db.exec(`
       insert into payments (id, user_id, amount, status, purpose)
-      values ('duplicate', 'ghana', 50, 'pending', 'activation')
+      values ('duplicate', 'ghana', 45, 'pending', 'activation')
     `), /duplicate key/);
     assert.deepEqual((await db.query(`
       insert into payments (id, user_id, amount, status, purpose)
-      values ('concurrent-retry', 'ghana', 50, 'pending', 'activation')
+      values ('concurrent-retry', 'ghana', 45, 'pending', 'activation')
       on conflict (user_id) where purpose = 'activation' and status in ('pending', 'confirmed')
       do update set user_id = excluded.user_id returning id
     `)).rows, [{ id: "gh-activation" }]);
     const revenue = async () => (await db.query(`
       select
-        coalesce(sum(amount) filter (where amount <> 7000), 0)::integer as ghs_total,
-        coalesce(sum(amount) filter (where amount = 7000), 0)::integer as ngn_total,
+        coalesce(sum(amount) filter (where amount not in (6000, 7000)), 0)::integer as ghs_total,
+        coalesce(sum(amount) filter (where amount in (6000, 7000)), 0)::integer as ngn_total,
         coalesce(sum(amount) filter (
-          where amount <> 7000 and (confirmed_at at time zone 'Africa/Accra')::date =
+          where amount not in (6000, 7000) and (confirmed_at at time zone 'Africa/Accra')::date =
             (now() at time zone 'Africa/Accra')::date
         ), 0)::integer as ghs_daily,
         coalesce(sum(amount) filter (
-          where amount = 7000 and (confirmed_at at time zone 'Africa/Lagos')::date =
+          where amount in (6000, 7000) and (confirmed_at at time zone 'Africa/Lagos')::date =
             (now() at time zone 'Africa/Lagos')::date
         ), 0)::integer as ngn_daily
       from payments where status = 'confirmed' and counts_revenue is not false
@@ -79,7 +79,7 @@ test("activation is a separate one-time payment and preserves test-account exclu
     });
     await db.exec("update payments set status = 'confirmed', confirmed_at = now() where purpose = 'activation'");
     assert.deepEqual(await revenue(), {
-      ghs_total: 400, ngn_total: 7000, ghs_daily: 400, ngn_daily: 7000,
+      ghs_total: 395, ngn_total: 6000, ghs_daily: 395, ngn_daily: 6000,
     });
     assert.equal(await activated("ghana"), true);
     assert.equal(await activated("nigeria"), true);
@@ -93,13 +93,13 @@ test("activation is a separate one-time payment and preserves test-account exclu
     `)).rows[0].count, 0);
     await db.exec("update payments set status = 'rejected' where id = 'ng-activation'");
     assert.deepEqual(await revenue(), {
-      ghs_total: 400, ngn_total: 0, ghs_daily: 400, ngn_daily: 0,
+      ghs_total: 395, ngn_total: 0, ghs_daily: 395, ngn_daily: 0,
     });
     assert.equal(await activated("nigeria"), false);
     assert.deepEqual(await submitSession("blocked-rejected", "nigeria"), []);
     await db.exec(`
       insert into payments (id, user_id, amount, status, purpose)
-      values ('ng-retry', 'nigeria', 7000, 'pending', 'activation')
+      values ('ng-retry', 'nigeria', 6000, 'pending', 'activation')
     `);
     assert.equal((await db.query("select count(*)::integer as count from payments")).rows[0].count, 6);
   } finally {

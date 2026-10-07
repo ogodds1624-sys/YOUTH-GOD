@@ -8,15 +8,17 @@ import { useLiveStorefront } from "@/lib/storefront-live";
 import { clearPendingPayment, confirmPendingPayment, readPendingPayment, savePendingPayment } from "@/lib/desk-session";
 import { storedReferral } from "@/lib/remember-ref";
 import { openTask } from "@/lib/task-order";
-import { activationFee } from "@/lib/activation";
+import { paymentQuote, type PaymentQuote } from "@/lib/pricing";
 
-export function PaymentCheckout({ activation = false, sessionAmount = 350 }: { activation?: boolean; sessionAmount?: number }) {
+export function PaymentCheckout({ activation = false, sessionAmount, packageId }: { activation?: boolean; sessionAmount?: number; packageId?: string }) {
   const navigate = useNavigate();
   const { user, isPending } = useCurrentUserState();
   const [country, setCountry] = useState<"Ghana" | "Nigeria">("Ghana");
-  const amount = activation ? activationFee(country) : sessionAmount;
-  const amountLabel = `${country === "Nigeria" ? "NGN" : "GHS"} ${amount.toLocaleString()}`;
   const store = useLiveStorefront();
+  const [quote, setQuote] = useState<PaymentQuote | null>(null);
+  const [purchased, setPurchased] = useState<{ amount: number; minutes: number | null } | null>(null);
+  const amount = purchased?.amount ?? quote?.amount ?? 0;
+  const amountLabel = `${country === "Nigeria" ? "NGN" : "GHS"} ${amount.toLocaleString()}`;
   const userId = user?.id ?? "";
   const devFallback = user?.isDevFallback === true;
   const [allowed, setAllowed] = useState(false);
@@ -51,6 +53,7 @@ export function PaymentCheckout({ activation = false, sessionAmount = 350 }: { a
         }
         if (link.country) setCountry(link.country);
         if (activation && link.activationPayment) {
+          setPurchased({ amount: link.activationPayment.amount, minutes: null });
           setPaymentId(link.activationPayment.id);
           savePendingPayment(link.activationPayment.id, link.activationPayment.amount, "activation");
         } else if (activation && readPendingPayment()?.purpose === "activation") {
@@ -68,16 +71,21 @@ export function PaymentCheckout({ activation = false, sessionAmount = 350 }: { a
   }, [isPending, userId, devFallback, navigate, activation]);
 
   useEffect(() => {
+    if (!allowed || !store || quote || purchased) return;
+    try {
+      setQuote(paymentQuote(store.pricing, country, activation ? "activation" : "session", packageId, sessionAmount));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not load pricing.");
+    }
+  }, [allowed, store, country, activation, packageId, sessionAmount, quote, purchased]);
+
+  useEffect(() => {
     if (!allowed || paymentId) return;
     if (activation) return;
     const saved = readPendingPayment();
     if (!saved) return;
     if (saved.purpose === "activation") {
       clearPendingPayment();
-      return;
-    }
-    if (!activation && saved.amount !== amount) {
-      void navigate({ to: "/pay", search: { amount: saved.amount }, replace: true, viewTransition: false });
       return;
     }
     let stop = false;
@@ -93,6 +101,7 @@ export function PaymentCheckout({ activation = false, sessionAmount = 350 }: { a
           setResult("rejected");
           setPaymentId(saved.id);
         } else {
+          setPurchased({ amount: row.amount, minutes: row.minutes });
           setPaymentId(saved.id);
           if (row.status === "confirmed") setResult("confirmed");
         }
@@ -111,6 +120,7 @@ export function PaymentCheckout({ activation = false, sessionAmount = 350 }: { a
     const check = () => {
       void getPaymentStatus({ data: { id: paymentId } }).then((row) => {
         if (stop) return;
+        setPurchased({ amount: row.amount, minutes: row.minutes });
         if (row.status === "confirmed" || row.status === "rejected") setResult(row.status);
       }).catch((err: unknown) => {
         if (!stop) setError(err instanceof Error ? err.message : "Could not check payment approval. Retrying.");
@@ -130,7 +140,11 @@ export function PaymentCheckout({ activation = false, sessionAmount = 350 }: { a
         });
         return;
       }
-      confirmPendingPayment(paymentId ?? "", amount);
+      if (purchased?.minutes == null) {
+        setError("The purchased session duration is missing. Reload checkout to retry.");
+        return;
+      }
+      confirmPendingPayment(paymentId ?? "", purchased.amount, purchased.minutes);
       clearPendingPayment();
       void navigate({ to: "/session" });
       return;
@@ -140,6 +154,8 @@ export function PaymentCheckout({ activation = false, sessionAmount = 350 }: { a
       if (activation) {
         setError("Your activation payment was rejected. Check the receipt and submit again.");
         setPaymentId(null);
+        setPurchased(null);
+        setQuote(null);
         setResult("pending");
         setSending(false);
         sendingRef.current = false;
@@ -147,7 +163,7 @@ export function PaymentCheckout({ activation = false, sessionAmount = 350 }: { a
       }
       void navigate({ to: "/packages", search: { rejected: 1 }, viewTransition: false });
     }
-  }, [result, amount, navigate, activation, paymentId]);
+  }, [result, amount, navigate, activation, paymentId, purchased]);
 
   const options = country === "Nigeria" ? (store?.nigeriaAccounts ?? []).map((account) => ({
     kind: "bank" as const, label: account.bank || "Bank transfer", number: account.number, name: account.name,
@@ -211,7 +227,7 @@ export function PaymentCheckout({ activation = false, sessionAmount = 350 }: { a
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!allowed || sendingRef.current || paymentId) return;
+    if (!allowed || !quote || sendingRef.current || paymentId) return;
     if (!receipt) {
       setError("Attach a screenshot of your payment.");
       return;
@@ -220,9 +236,10 @@ export function PaymentCheckout({ activation = false, sessionAmount = 350 }: { a
     sendingRef.current = true;
     setSending(true);
     try {
-      const saved = await recordPayment({ data: { name: "", amount, receipt, referredBy: storedReferral(), purpose: activation ? "activation" : "session" } });
+      const saved = await recordPayment({ data: { name: "", amount: quote.amount, minutes: quote.minutes, packageId: quote.packageId ?? undefined, receipt, referredBy: storedReferral(), purpose: activation ? "activation" : "session" } });
+      setPurchased({ amount: saved.amount, minutes: saved.minutes });
       setPaymentId(saved.id);
-      savePendingPayment(saved.id, amount, activation ? "activation" : "session");
+      savePendingPayment(saved.id, saved.amount, activation ? "activation" : "session");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not send that payment.");
       sendingRef.current = false;
@@ -233,7 +250,7 @@ export function PaymentCheckout({ activation = false, sessionAmount = 350 }: { a
   const waitingLabel =
     result === "confirmed" ? CONNECTING_PHONE_MESSAGE : result === "rejected" ? "payment rejected" : "waiting for confirmation";
 
-  if (!allowed) {
+  if (!allowed || (!quote && !purchased)) {
     return (
       <main className="grid min-h-dvh place-items-center bg-ink px-5 text-white">
         {error ? <p role="alert">{error}</p> : <SignalLoading label="Checking account" />}
@@ -280,6 +297,7 @@ export function PaymentCheckout({ activation = false, sessionAmount = 350 }: { a
         </h1>
         <p className="mt-1 text-sm text-white/65">{store?.businessName ?? "Casino World"}</p>
         {activation ? <p className="mt-2 text-sm text-white/65">One-time payment. Admin approval is required before choosing a session package.</p> : null}
+        {!activation ? <p className="mt-2 text-sm text-white/65">{purchased?.minutes ?? quote?.minutes} mins per session</p> : null}
           </div>
         </div>
         <div className="payment-amount-card mt-5">
