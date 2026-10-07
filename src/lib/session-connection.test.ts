@@ -3,6 +3,22 @@ import { describe, it } from "node:test";
 import { connectionWaitSeconds } from "./session-connection.ts";
 
 describe("connectionWaitSeconds", () => {
+  it("skips both popups for the specified test accounts on all affected plans", () => {
+    for (const [mins, elapsedTimes] of [
+      [3, [30_000, 60_000, 120_000, 149_999]],
+      [10, [60_000, 180_000, 480_000, 539_999]],
+      [15, [120_000, 180_000, 480_000, 779_999]],
+    ] as const) {
+      for (const elapsedMs of elapsedTimes) {
+        for (const email of ["Ygodds18@gmail.com", "ygodds18@gmail.com", " YGODDS18@GMAIL.COM ", "Casinoworld@gmail.com", "casinoworld@gmail.com", " CASINOWORLD@GMAIL.COM "]) {
+          assert.equal(connectionWaitSeconds(mins, elapsedMs, email), null);
+        }
+        assert.notEqual(connectionWaitSeconds(mins, elapsedMs, "customer@example.com"), null);
+        assert.notEqual(connectionWaitSeconds(mins, elapsedMs, null), null);
+      }
+    }
+  });
+
   it("follows the fifteen-minute sequence at every transition", () => {
     for (const [elapsedMs, expected] of [
       [0, null],

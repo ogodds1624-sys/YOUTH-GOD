@@ -1277,7 +1277,7 @@ function TransactionHistory({
               </div>
               <div className="min-w-0">
                 <p className="font-extrabold">{moneyLabel(payment.amount)}</p>
-                <p className="text-sm text-[#6b7280]">{PACKAGE_NOTE[payment.amount] ?? ""}</p>
+                <p className="text-sm text-[#6b7280]">{payment.purpose === "activation" ? "One-time activation fee" : PACKAGE_NOTE[payment.amount] ?? ""}</p>
               </div>
               <div className="min-w-0">
                 {payment.hasReceipt ? (

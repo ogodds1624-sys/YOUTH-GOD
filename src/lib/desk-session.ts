@@ -2,7 +2,7 @@ export const PREDICTOR_URL = "https://baker-king-acre-ivory.grok.me";
 const KEY = "aviator-session";
 
 export const NGN_PER_GHS = 119.96;
-export const NAIRA_AMOUNTS = [41986, 95968, 203932, 35000, 55000, 75000] as const;
+export const NAIRA_AMOUNTS = [7000, 41986, 95968, 203932, 35000, 55000, 75000] as const;
 
 export function isNairaAmount(amount: number) {
   return (NAIRA_AMOUNTS as readonly number[]).includes(amount);
@@ -47,17 +47,17 @@ export function sessionLeft() {
 const PENDING_KEY = "casino-pending-payment";
 
 // Remembers a payment that is waiting for admin approval so a reload keeps the waiting screen.
-export function savePendingPayment(id: string, amount: number) {
-  window.localStorage.setItem(PENDING_KEY, JSON.stringify({ id, amount }));
+export function savePendingPayment(id: string, amount: number, purpose: "session" | "activation" = "session") {
+  window.localStorage.setItem(PENDING_KEY, JSON.stringify({ id, amount, purpose }));
 }
 
 export function readPendingPayment() {
   try {
     const raw = window.localStorage.getItem(PENDING_KEY);
     if (!raw) return null;
-    const data = JSON.parse(raw) as { id?: unknown; amount?: unknown; readyAt?: unknown };
+    const data = JSON.parse(raw) as { id?: unknown; amount?: unknown; readyAt?: unknown; purpose?: unknown };
     if (typeof data.id !== "string" || !Number.isFinite(data.amount)) return null;
-    return { id: data.id, amount: data.amount as number, readyAt: typeof data.readyAt === "number" ? data.readyAt : null };
+    return { id: data.id, amount: data.amount as number, readyAt: typeof data.readyAt === "number" ? data.readyAt : null, purpose: data.purpose === "activation" ? "activation" as const : "session" as const };
   } catch {
     return null;
   }

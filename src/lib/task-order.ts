@@ -6,14 +6,16 @@ export type TaskProgress = {
   signedIn: boolean;
   country: "Ghana" | "Nigeria" | null;
   linked: boolean;
+  activated: boolean;
 };
 
-/** 1 registration, 2 country, 3 SportyBet connect, 4 package prices. */
-export function taskStep(link: TaskProgress): 1 | 2 | 3 | 4 {
+/** Registration, country, SportyBet connection, activation, then package prices. */
+export function taskStep(link: TaskProgress): 1 | 2 | 3 | 4 | 5 {
   if (!link.signedIn) return 1;
   if (link.country !== "Ghana" && link.country !== "Nigeria") return 2;
   if (!link.linked) return 3;
-  return 4;
+  if (!link.activated) return 4;
+  return 5;
 }
 
 export async function openTask(navigate: Navigate, link: TaskProgress) {
@@ -28,6 +30,10 @@ export async function openTask(navigate: Navigate, link: TaskProgress) {
   }
   if (step === 3) {
     await navigate({ to: "/connect" });
+    return;
+  }
+  if (step === 4) {
+    await navigate({ to: "/activation" });
     return;
   }
   if (link.country === "Nigeria") {

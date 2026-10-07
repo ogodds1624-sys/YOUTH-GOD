@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { adminAuthMiddleware } from "@/lib/admin-auth";
 import type { Sql } from "@/lib/db";
 import { isNairaAmount } from "@/lib/desk-session";
+import { activationFee, type PaymentPurpose } from "@/lib/activation";
 import {
   availablePartnerEarnings,
   commissionAmount,
@@ -22,6 +23,7 @@ export type AdminMember = {
 
 export type AdminPayment = {
   id: string;
+  purpose: PaymentPurpose;
   payerName: string;
   amount: number;
   status: "pending" | "confirmed" | "rejected";
@@ -510,6 +512,7 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
   const paymentRows = await sql<{
     id: string;
     payer_name: string;
+    purpose: PaymentPurpose;
     amount: number | string;
     status: string;
     created_at: string | Date;
@@ -522,7 +525,7 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
     referred_by: string | null;
     country: string | null;
   }>`
-    select p.id, p.payer_name, p.amount, p.status, p.created_at, u.name as member_name, u.email as member_email,
+    select p.id, p.purpose, p.payer_name, p.amount, p.status, p.created_at, u.name as member_name, u.email as member_email,
       (p.receipt is not null and p.receipt <> '') as has_receipt,
       p.counts_revenue,
       exists (select 1 from test_accounts t where t.email = lower(trim(u.email))) as is_test_account,
@@ -541,6 +544,7 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
     const status = row.status === "confirmed" || row.status === "rejected" ? row.status : "pending";
     return {
       id: row.id,
+      purpose: row.purpose,
       payerName: row.payer_name,
       amount: Number(row.amount),
       status,
@@ -900,11 +904,15 @@ export const getPaymentStatus = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const { getSql } = await import("@/lib/db");
+    const { getSessionUser } = await import("@/lib/auth/verify.server");
+    const user = await getSessionUser();
+    if (!user) throw new Error("Sign in to check your payment.");
     const sql = await getSql();
     await ensurePayments(sql);
-    const rows = await sql<{ status: string }>`select status from payments where id = ${data.id}`;
-    const status = rows[0]?.status;
-    return { status: status === "confirmed" || status === "rejected" ? status : "pending" };
+    const rows = await sql<{ status: string; purpose: PaymentPurpose }>`select status, purpose from payments where id = ${data.id} and user_id = ${user.id}`;
+    if (!rows[0]) throw new Error("This payment could not be found for your account.");
+    const status = rows[0].status;
+    return { status: status === "confirmed" || status === "rejected" ? status : "pending", purpose: rows[0].purpose };
   });
 
 export const hasPaidAccess = createServerFn({ method: "GET" }).handler(async () => {
@@ -915,20 +923,25 @@ export const hasPaidAccess = createServerFn({ method: "GET" }).handler(async () 
   const sql = await getSql();
   await ensurePayments(sql);
   const rows = await sql<{ id: string }>`
-    select id from payments where user_id = ${user.id} and status = 'confirmed' limit 1
+    select id from payments where user_id = ${user.id} and status = 'confirmed' and purpose = 'session'
+      and exists (select 1 from payments a where a.user_id = ${user.id} and a.purpose = 'activation' and a.status = 'confirmed')
+    limit 1
   `;
   return { paid: rows.length > 0 };
 });
 
 export const recordPayment = createServerFn({ method: "POST" })
-  .inputValidator((data: { name: string; amount: number; receipt?: string; referredBy?: string }) => {
+  .inputValidator((data: { name: string; amount: number; receipt?: string; referredBy?: string; purpose?: PaymentPurpose }) => {
     const name = data?.name?.trim() ?? "";
     const amount = Number(data?.amount);
     const receipt = typeof data?.receipt === "string" ? data.receipt : "";
     const referredBy = String(data?.referredBy ?? "").trim().slice(0, 80);
     if (!receipt && name.length < 3) throw new Error("Attach a screenshot of your payment.");
-    if (![300, 350, 400, 500, 800, 1700, 41986, 95968, 203932, 35000, 55000, 75000].includes(amount)) throw new Error("Unknown package.");
-    return { name, amount, receipt, referredBy };
+    const purpose = data.purpose ?? "session";
+    if (purpose !== "session" && purpose !== "activation") throw new Error("Unknown payment purpose.");
+    if (purpose === "activation" && !receipt) throw new Error("Attach a screenshot of your activation payment.");
+    if (purpose === "activation" ? ![50, 7000].includes(amount) : ![300, 350, 400, 500, 800, 1700, 41986, 95968, 203932, 35000, 55000, 75000].includes(amount)) throw new Error("Unknown payment amount.");
+    return { name, amount, receipt, referredBy, purpose };
   })
   .handler(async ({ data }) => {
     const { getSql } = await import("@/lib/db");
@@ -936,6 +949,19 @@ export const recordPayment = createServerFn({ method: "POST" })
     const sql = await getSql();
     const sessionUser = await getSessionUser();
     await ensurePayments(sql);
+    if (!sessionUser) throw new Error("Sign in before submitting payment.");
+    const link = await getSportyLink();
+    if (!link.linked || !link.country) throw new Error("Connect your SportyBet number first.");
+    if (data.purpose === "activation") {
+      if (data.amount !== activationFee(link.country)) throw new Error("Incorrect activation fee for your country.");
+      if (link.activated) throw new Error("Your account is already activated.");
+      const existing = await sql<{ id: string }>`
+        select id from payments where user_id = ${sessionUser.id} and purpose = 'activation' and status = 'pending'
+      `;
+      if (existing[0]) return { ok: true, id: existing[0].id };
+    } else if (!link.activated) {
+      throw new Error("Your activation payment must be approved before buying a session.");
+    }
     let referredBy = "";
     if (sessionUser) {
       const refs = await sql<{ referred_by: string }>`
@@ -955,11 +981,19 @@ export const recordPayment = createServerFn({ method: "POST" })
       `;
     }
     const id = crypto.randomUUID();
-    await sql`
-      insert into payments (id, payer_name, amount, status, user_id, referred_by, receipt)
-      values (${id}, ${data.name}, ${data.amount}, 'pending', ${sessionUser?.id ?? null}, ${referredBy}, ${data.receipt})
+    const saved = await sql<{ id: string }>`
+      insert into payments (id, payer_name, amount, status, user_id, referred_by, receipt, purpose)
+      select ${id}, ${data.name}, ${data.amount}, 'pending', ${sessionUser.id}, ${referredBy}, ${data.receipt}, ${data.purpose}
+      where ${data.purpose} = 'activation' or exists (
+        select 1 from payments a
+        where a.user_id = ${sessionUser.id} and a.purpose = 'activation' and a.status = 'confirmed'
+      )
+      on conflict (user_id) where purpose = 'activation' and status in ('pending', 'confirmed') do update
+      set user_id = excluded.user_id
+      returning id
     `;
-    return { ok: true, id };
+    if (!saved[0]) throw new Error("Your activation payment must be approved before buying a session.");
+    return { ok: true, id: saved[0].id };
   });
 
 export const getPaymentProof = createServerFn({ method: "POST" })
@@ -997,7 +1031,9 @@ export const confirmedDeskLogin = createServerFn({ method: "GET" }).handler(asyn
   await ensurePayments(sql);
   await ensureDeskPasses(sql);
   const paid = await sql<{ ok: number }>`
-    select 1 as ok from payments where user_id = ${user.id} and status = 'confirmed' limit 1
+    select 1 as ok from payments where user_id = ${user.id} and status = 'confirmed' and purpose = 'session'
+      and exists (select 1 from payments a where a.user_id = ${user.id} and a.purpose = 'activation' and a.status = 'confirmed')
+    limit 1
   `;
   if (paid.length === 0) return empty;
   const nums = await sql<{ number: string }>`select number from sporty_accounts where user_id = ${user.id} limit 1`;
@@ -1161,7 +1197,7 @@ export const getSportyLink = createServerFn({ method: "GET" }).handler(async () 
   const { getSessionUser } = await import("@/lib/auth/verify.server");
   const user = await getSessionUser();
   if (!user) {
-    return { linked: false, country: null as "Ghana" | "Nigeria" | null, locked: false, signedIn: false, completed: false };
+    return { linked: false, country: null as "Ghana" | "Nigeria" | null, locked: false, signedIn: false, completed: false, activated: false, activationPayment: null as { id: string; amount: number } | null };
   }
   const sql = await getSql();
   await ensurePayments(sql);
@@ -1174,7 +1210,17 @@ export const getSportyLink = createServerFn({ method: "GET" }).handler(async () 
   const flag = completedRows[0]?.completed as unknown;
   const completed = retained || flag === true || flag === "t" || flag === "true" || flag === 1;
   const linked = retained;
-  return { linked, country, locked: linked && country != null, signedIn: true, completed };
+  const activationRows = await sql<{ id: string; amount: number; status: string }>`
+    select id, amount, status from payments
+    where user_id = ${user.id} and purpose = 'activation' and status in ('pending', 'confirmed')
+    limit 1
+  `;
+  const activation = activationRows[0];
+  return {
+    linked, country, locked: linked && country != null, signedIn: true, completed,
+    activated: activation?.status === "confirmed",
+    activationPayment: activation ? { id: activation.id, amount: Number(activation.amount) } : null,
+  };
 });
 
 export const savePlayerCountry = createServerFn({ method: "POST" })

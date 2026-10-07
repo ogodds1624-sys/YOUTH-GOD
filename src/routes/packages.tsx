@@ -59,7 +59,7 @@ function PackagesPage() {
         void navigate({ to: "/register" });
         return;
       }
-      if (!link.linked) {
+      if (!link.linked || !link.activated) {
         void openTask(navigate, link);
         return;
       }
@@ -81,9 +81,9 @@ function PackagesPage() {
   }, [rejected]);
 
   useEffect(() => {
-    if (stay) return;
+    if (stay || !ready) return;
     if (sessionLeft() > 0) void navigate({ to: "/session", viewTransition: false });
-  }, [navigate, stay]);
+  }, [navigate, stay, ready]);
 
   if (!ready) {
     return (

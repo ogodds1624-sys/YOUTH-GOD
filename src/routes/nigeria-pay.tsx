@@ -6,7 +6,7 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useLiveStorefront } from "@/lib/storefront-live";
 import { CONNECTING_PHONE_MESSAGE, SignalLoading } from "@/components/signal-loading";
 import { clearPendingPayment, confirmPendingPayment, readPendingPayment, savePendingPayment } from "@/lib/desk-session";
-import { rememberReferral, storedReferral } from "@/lib/remember-ref";
+import { storedReferral } from "@/lib/remember-ref";
 import { openTask } from "@/lib/task-order";
 
 export const Route = createFileRoute("/nigeria-pay")({
@@ -49,11 +49,12 @@ function NigeriaPayPage() {
     let stop = false;
     void getSportyLink().then((link) => {
       if (stop) return;
+      if (link.activated && readPendingPayment()?.purpose === "activation") clearPendingPayment();
       if (!link.signedIn || devFallback) {
         void navigate({ to: "/register" });
         return;
       }
-      if (!link.linked) {
+      if (!link.linked || !link.activated) {
         void openTask(navigate, link);
         return;
       }
@@ -185,7 +186,6 @@ function NigeriaPayPage() {
     sendingRef.current = true;
     setSending(true);
     try {
-      await rememberReferral();
       const saved = await recordPayment({ data: { name: "", amount, receipt, referredBy: storedReferral() } });
       setPaymentId(saved.id);
       savePendingPayment(saved.id, amount);

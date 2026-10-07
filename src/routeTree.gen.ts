@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ActivationRouteImport } from './routes/activation'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminpageRouteImport } from './routes/adminpage'
 import { Route as ConnectRouteImport } from './routes/connect'
@@ -28,6 +29,11 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActivationRoute = ActivationRouteImport.update({
+  id: '/activation',
+  path: '/activation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -103,6 +109,7 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/activation': typeof ActivationRoute
   '/admin': typeof AdminRoute
   '/adminpage': typeof AdminpageRoute
   '/connect': typeof ConnectRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/activation': typeof ActivationRoute
   '/admin': typeof AdminRoute
   '/adminpage': typeof AdminpageRoute
   '/connect': typeof ConnectRoute
@@ -138,6 +146,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/activation': typeof ActivationRoute
   '/admin': typeof AdminRoute
   '/adminpage': typeof AdminpageRoute
   '/connect': typeof ConnectRoute
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/activation'
     | '/admin'
     | '/adminpage'
     | '/connect'
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/activation'
     | '/admin'
     | '/adminpage'
     | '/connect'
@@ -191,6 +202,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/activation'
     | '/admin'
     | '/adminpage'
     | '/connect'
@@ -209,6 +221,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ActivationRoute: typeof ActivationRoute
   AdminRoute: typeof AdminRoute
   AdminpageRoute: typeof AdminpageRoute
   ConnectRoute: typeof ConnectRoute
@@ -232,6 +245,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/activation': {
+      id: '/activation'
+      path: '/activation'
+      fullPath: '/activation'
+      preLoaderRoute: typeof ActivationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -337,6 +357,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ActivationRoute: ActivationRoute,
   AdminRoute: AdminRoute,
   AdminpageRoute: AdminpageRoute,
   ConnectRoute: ConnectRoute,

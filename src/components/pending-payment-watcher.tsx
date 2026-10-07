@@ -1,21 +1,24 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { SignalLoading } from "@/components/signal-loading";
-import { getPaymentStatus } from "@/lib/admin-snapshot";
+import { getPaymentStatus, getSportyLink } from "@/lib/admin-snapshot";
+import { openTask } from "@/lib/task-order";
 import { clearPendingPayment, confirmPendingPayment, readPendingPayment } from "@/lib/desk-session";
 
 // Pages that run their own waiting screen.
-const OWN_SCREEN = ["/pay", "/nigeria-pay", "/admin", "/session"];
+const OWN_SCREEN = ["/pay", "/activation", "/nigeria-pay", "/admin", "/session"];
 
 export function PendingPaymentWatcher() {
   const path = useRouterState({ select: (state) => state.location.pathname });
   const navigate = useNavigate();
   const [state, setState] = useState<"none" | "pending">("none");
+  const [error, setError] = useState<string | null>(null);
   const skip = OWN_SCREEN.includes(path);
 
   useEffect(() => {
     if (skip) {
       setState("none");
+      setError(null);
       return;
     }
     let stop = false;
@@ -36,6 +39,17 @@ export function PendingPaymentWatcher() {
       void getPaymentStatus({ data: { id: saved.id } })
         .then((row) => {
           if (stop) return;
+          setError(null);
+          if (row.purpose === "activation" && row.status !== "pending") {
+            window.clearInterval(poll);
+            clearPendingPayment();
+            setState("none");
+            if (row.status === "rejected") void navigate({ to: "/activation" });
+            else void getSportyLink().then((link) => openTask(navigate, link)).catch((err: unknown) => {
+              setError(err instanceof Error ? err.message : "Could not open packages. Reload to continue.");
+            });
+            return;
+          }
           if (row.status === "rejected") {
             window.clearInterval(poll);
             finish(true);
@@ -47,7 +61,8 @@ export function PendingPaymentWatcher() {
             setState("pending");
           }
         })
-        .catch(() => {
+        .catch((err: unknown) => {
+          if (!stop) setError(err instanceof Error ? err.message : "Could not check payment approval. Retrying.");
           if (!stop && readPendingPayment()) setState("pending");
         });
     }
@@ -60,6 +75,11 @@ export function PendingPaymentWatcher() {
     };
   }, [skip, navigate]);
 
-  if (state === "none") return null;
-  return <SignalLoading label="waiting for confirmation" />;
+  if (state === "none" && !error) return null;
+  return (
+    <>
+      {state !== "none" ? <SignalLoading label="waiting for confirmation" /> : null}
+      {error ? <p role="alert" className="fixed bottom-6 z-50 px-4 text-sm text-red">{error}</p> : null}
+    </>
+  );
 }

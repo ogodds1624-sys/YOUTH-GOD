@@ -19,8 +19,28 @@ function SessionPage() {
   const [mins, setMins] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [desk, setDesk] = useState<string | null>(null);
+  const [allowed, setAllowed] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (isPending) return;
+    let stop = false;
+    setAllowed(false);
+    void getSportyLink().then((link) => {
+      if (stop) return;
+      if (!link.signedIn || !link.linked || !link.activated || devFallback) {
+        void openTask(navigate, link);
+        return;
+      }
+      setAllowed(true);
+    }).catch((err: unknown) => {
+      if (!stop) setError(err instanceof Error ? err.message : "Could not check account activation. Reload to retry.");
+    });
+    return () => { stop = true; };
+  }, [isPending, userId, devFallback, navigate]);
+
+  useEffect(() => {
+    if (!allowed) return;
     let cancel = false;
     let timer = 0;
     const look = () => {
@@ -47,10 +67,10 @@ function SessionPage() {
       cancel = true;
       window.clearTimeout(timer);
     };
-  }, []);
+  }, [allowed]);
 
   useEffect(() => {
-    if (isPending) return;
+    if (isPending || !allowed) return;
     const tick = () => {
       const session = readSession();
       const ms = sessionLeft();
@@ -76,12 +96,14 @@ function SessionPage() {
     tick();
     const id = window.setInterval(tick, 1000);
     return () => window.clearInterval(id);
-  }, [navigate, isPending, userId, devFallback]);
+  }, [navigate, isPending, userId, devFallback, allowed]);
 
+  if (error) return <main className="grid min-h-dvh place-items-center bg-ink px-5 text-white"><p role="alert">{error}</p></main>;
+  if (!allowed) return null;
   if (left == null) return null;
   const total = Math.ceil(left / 1000);
   const clock = `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
-  const issueWaitSeconds = connectionWaitSeconds(mins, elapsedMs);
+  const issueWaitSeconds = connectionWaitSeconds(mins, elapsedMs, user?.primaryEmail);
 
   return (
     <main className="flex h-dvh flex-col bg-ink text-white">
