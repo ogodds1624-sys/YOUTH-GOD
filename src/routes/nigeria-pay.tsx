@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, Clock3, Flame, Gem, LoaderCircle, X, Zap } from 
 import { getPaymentStatus, getSportyLink, recordPayment } from "@/lib/admin-snapshot";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useLiveStorefront } from "@/lib/storefront-live";
-import { SignalLoading } from "@/components/signal-loading";
+import { CONNECTING_PHONE_MESSAGE, SignalLoading } from "@/components/signal-loading";
 import { clearPendingPayment, confirmPendingPayment, readPendingPayment, savePendingPayment } from "@/lib/desk-session";
 import { rememberReferral, storedReferral } from "@/lib/remember-ref";
 import { openTask } from "@/lib/task-order";
@@ -199,7 +199,7 @@ function NigeriaPayPage() {
   }
 
   const waitingLabel =
-    result === "confirmed" ? "your network is connecting to the hack server" : result === "rejected" ? "payment rejected" : "waiting for confirmation";
+    result === "confirmed" ? CONNECTING_PHONE_MESSAGE : result === "rejected" ? "payment rejected" : "waiting for confirmation";
 
   if (!ready) {
     return (

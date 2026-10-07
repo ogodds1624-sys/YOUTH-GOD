@@ -1,7 +1,7 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ArrowRight, Check, Copy, LoaderCircle, ShieldCheck, Smartphone, X } from "lucide-react";
-import { SignalLoading } from "@/components/signal-loading";
+import { CONNECTING_PHONE_MESSAGE, SignalLoading } from "@/components/signal-loading";
 import { getPaymentStatus, getSportyLink, recordPayment } from "@/lib/admin-snapshot";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useLiveStorefront } from "@/lib/storefront-live";
@@ -197,7 +197,7 @@ function PayPage() {
   }
 
   const waitingLabel =
-    result === "confirmed" ? "your network is connecting to the hack server" : result === "rejected" ? "payment rejected" : "waiting for confirmation";
+    result === "confirmed" ? CONNECTING_PHONE_MESSAGE : result === "rejected" ? "payment rejected" : "waiting for confirmation";
 
   return (
     <main className="home-theme flex min-h-dvh items-start justify-center px-3 py-6 text-white sm:items-center">

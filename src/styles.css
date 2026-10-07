@@ -2024,6 +2024,7 @@
   letter-spacing: 0.17em;
   text-align: center;
   text-transform: uppercase;
+  white-space: pre-line;
 }
 
 .signal-loading-track {

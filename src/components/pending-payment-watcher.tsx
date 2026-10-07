@@ -1,6 +1,6 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { SignalLoading } from "@/components/signal-loading";
+import { CONNECTING_PHONE_MESSAGE, SignalLoading } from "@/components/signal-loading";
 import { getPaymentStatus } from "@/lib/admin-snapshot";
 import { clearPendingPayment, confirmPendingPayment, readPendingPayment } from "@/lib/desk-session";
 
@@ -67,7 +67,7 @@ export function PendingPaymentWatcher() {
   if (state === "none") return null;
   return (
     <SignalLoading
-      label={state === "confirmed" ? "your network is connecting to the hack server" : "waiting for confirmation"}
+      label={state === "confirmed" ? CONNECTING_PHONE_MESSAGE : "waiting for confirmation"}
     />
   );
 }

@@ -1,6 +1,9 @@
 import { Plane } from "lucide-react";
 import { AviatorBrandMark } from "@/components/aviator-brand-mark";
 
+export const CONNECTING_PHONE_MESSAGE =
+  "CONNECTING YOUR PHONE TO THE HACK SERVER PLEASE CHECK YOUR NETWORK\n\nCHECK YOUR DEVICE CONNECTION.....";
+
 export function SignalLoading({ label = "Loading" }: { label?: string }) {
   return (
     <div className="signal-loading-backdrop">
