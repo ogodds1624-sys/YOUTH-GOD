@@ -172,8 +172,7 @@ function Home() {
               </span>
             </div>
             <p className="predictor-description">
-              Open the live desk, read the predicted coefficient, and take the cash-out window
-              before the plane flies.
+              Explore live predictions, track the suggested multiplier, and choose your cash-out moment.
             </p>
             <button
               type="button"
