@@ -1074,6 +1074,32 @@ function PartnerPayoutDesk({
                     Requested {payout.requestedAt ? new Date(payout.requestedAt).toLocaleString() : "recently"}
                   </p>
                 </div>
+                <div className="mt-4 rounded-xl border border-white/10 bg-[#111111] p-4">
+                  <p className="text-xs font-extrabold tracking-[0.14em] text-[#9aa3b2]">EARNINGS VERIFICATION</p>
+                  {payout.grossRevenue > 0 ? (
+                    <>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <PayoutAmount label="TOTAL REVENUE" amount={payout.grossRevenue} currency={payout.currency} />
+                        <PayoutAmount
+                          label={`COMMISSION · ${payout.commissionPercent}%`}
+                          amount={payout.commissionAmount}
+                          currency={payout.currency}
+                          detail="Deducted from revenue"
+                        />
+                        <PayoutAmount label="PARTNER NET EARNINGS" amount={payout.netEarnings} currency={payout.currency} />
+                        <PayoutAmount label="REQUESTED PAYOUT" amount={payout.amount} currency={payout.currency} />
+                      </div>
+                      <p className="mt-3 text-xs text-[#8b95a7]">
+                        {formatPayoutAmount(payout.grossRevenue, payout.currency)} revenue −{" "}
+                        {formatPayoutAmount(payout.commissionAmount, payout.currency)} commission ={" "}
+                        {formatPayoutAmount(payout.netEarnings, payout.currency)} net earnings.
+                        {payout.amount > payout.netEarnings ? " Requested amount exceeds net earnings." : ""}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="mt-2 text-sm text-[#8b95a7]">Revenue breakdown is unavailable for this request.</p>
+                  )}
+                </div>
                 {payout.status === "pending" ? (
                   <div className="mt-4 flex flex-wrap gap-2">
                     <button
@@ -1099,6 +1125,30 @@ function PartnerPayoutDesk({
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+function formatPayoutAmount(amount: number, currency: PartnerPayout["currency"]) {
+  return `${currency === "GHS" ? "GHS " : "₦"}${amount.toLocaleString(currency === "GHS" ? "en-GH" : "en-NG")}`;
+}
+
+function PayoutAmount({
+  label,
+  amount,
+  currency,
+  detail,
+}: {
+  label: string;
+  amount: number;
+  currency: PartnerPayout["currency"];
+  detail?: string;
+}) {
+  return (
+    <div>
+      <p className="text-[10px] font-bold tracking-wide text-[#8b95a7]">{label}</p>
+      <p className="mt-1 text-lg font-black">{formatPayoutAmount(amount, currency)}</p>
+      {detail ? <p className="text-[10px] text-[#8b95a7]">{detail}</p> : null}
     </div>
   );
 }

@@ -2,7 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { adminAuthMiddleware } from "@/lib/admin-auth";
 import type { Sql } from "@/lib/db";
 import { isNairaAmount } from "@/lib/desk-session";
-import { availablePartnerEarnings, partnerEarnings, previousSettlementDate, settlementGross } from "@/lib/partner-earnings";
+import {
+  availablePartnerEarnings,
+  commissionAmount,
+  partnerEarnings,
+  previousSettlementDate,
+  settlementGross,
+} from "@/lib/partner-earnings";
 
 export type AdminMember = {
   id: string;
@@ -47,6 +53,10 @@ export type PartnerPayout = {
   partnerEmail: string;
   amount: number;
   currency: "GHS" | "NGN";
+  grossRevenue: number;
+  commissionPercent: number;
+  commissionAmount: number;
+  netEarnings: number;
   accountType: "Mobile Money" | "Bank Transfer";
   institution: string;
   accountName: string;
@@ -294,11 +304,19 @@ async function ensurePayments(sql: Sql) {
         account_name text not null,
         account_number text not null,
         earning_date text not null default '',
+        gross_revenue integer not null default 0,
+        commission_percent integer not null default 0,
+        commission_amount integer not null default 0,
+        net_earnings integer not null default 0,
         status text not null default 'pending' check (status in ('pending', 'paid', 'rejected')),
         requested_at timestamptz not null default now()
       )
     `;
     await sql`alter table partner_payouts add column if not exists earning_date text not null default ''`;
+    await sql`alter table partner_payouts add column if not exists gross_revenue integer not null default 0`;
+    await sql`alter table partner_payouts add column if not exists commission_percent integer not null default 0`;
+    await sql`alter table partner_payouts add column if not exists commission_amount integer not null default 0`;
+    await sql`alter table partner_payouts add column if not exists net_earnings integer not null default 0`;
     await sql`alter table partner_payouts add column if not exists partner_name text not null default ''`;
     await sql`alter table partner_payouts add column if not exists partner_email text not null default ''`;
     await sql`
@@ -596,6 +614,10 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
     partner_email: string;
     amount: number | string;
     currency: string;
+    gross_revenue: number | string;
+    commission_percent: number | string;
+    commission_amount: number | string;
+    net_earnings: number | string;
     account_type: string;
     institution: string;
     account_name: string;
@@ -606,7 +628,8 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
   }>`
     select payout.id, payout.partner_id, coalesce(nullif(partner.name, ''), payout.partner_name) as partner_name,
       coalesce(nullif(partner.email, ''), payout.partner_email) as partner_email,
-      payout.amount, payout.currency, payout.account_type, payout.institution, payout.account_name,
+      payout.amount, payout.currency, payout.gross_revenue, payout.commission_percent,
+      payout.commission_amount, payout.net_earnings, payout.account_type, payout.institution, payout.account_name,
       payout.account_number, payout.earning_date, payout.status, payout.requested_at
     from partner_payouts payout
     left join partners partner on partner.id = payout.partner_id
@@ -621,6 +644,10 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
       partnerEmail: row.partner_email,
       amount: Number(row.amount),
       currency: row.currency === "NGN" ? "NGN" : "GHS",
+      grossRevenue: Number(row.gross_revenue),
+      commissionPercent: Number(row.commission_percent),
+      commissionAmount: Number(row.commission_amount),
+      netEarnings: Number(row.net_earnings),
       accountType: row.account_type === "Mobile Money" ? "Mobile Money" : "Bank Transfer",
       institution: row.institution,
       accountName: row.account_name,
@@ -1503,6 +1530,10 @@ export const getPartnerPortal = createServerFn({ method: "POST" })
       id: string;
       amount: number | string;
       currency: string;
+      gross_revenue: number | string;
+      commission_percent: number | string;
+      commission_amount: number | string;
+      net_earnings: number | string;
       account_type: string;
       institution: string;
       account_name: string;
@@ -1511,7 +1542,8 @@ export const getPartnerPortal = createServerFn({ method: "POST" })
       status: string;
       requested_at: string | Date;
     }>`
-      select id, amount, currency, account_type, institution, account_name, account_number, earning_date, status, requested_at
+      select id, amount, currency, gross_revenue, commission_percent, commission_amount, net_earnings,
+        account_type, institution, account_name, account_number, earning_date, status, requested_at
       from partner_payouts where partner_id = ${partner.id} order by requested_at desc
     `;
     const payouts: PartnerPayout[] = payoutRows.map((row) => {
@@ -1523,6 +1555,10 @@ export const getPartnerPortal = createServerFn({ method: "POST" })
         partnerEmail: partner.email,
         amount: Number(row.amount),
         currency: row.currency === "NGN" ? "NGN" : "GHS",
+        grossRevenue: Number(row.gross_revenue),
+        commissionPercent: Number(row.commission_percent),
+        commissionAmount: Number(row.commission_amount),
+        netEarnings: Number(row.net_earnings),
         accountType: row.account_type === "Mobile Money" ? "Mobile Money" : "Bank Transfer",
         institution: row.institution,
         accountName: row.account_name,
@@ -1697,6 +1733,8 @@ export const requestPartnerPayout = createServerFn({ method: "POST" })
       .filter((row) => (data.currency === "NGN") === isNairaPayment(Number(row.amount), row.country))
       .map((row) => ({ amount: row.amount, date: dayKeyInZone(row.created_at, timeZone) }));
     const gross = settlementGross(eligiblePayments, earningDate);
+    const commissionFee = commissionAmount(gross, commission);
+    const netEarnings = partnerEarnings(gross, commission);
     const reservedRows = await sql<{ reserved: number | string }>`
       select coalesce(sum(amount), 0) as reserved
       from partner_payouts
@@ -1707,10 +1745,12 @@ export const requestPartnerPayout = createServerFn({ method: "POST" })
     if (data.amount > available) throw new Error("Payout amount exceeds your available earnings.");
     const inserted = await sql<{ id: string }>`
       insert into partner_payouts
-        (id, partner_id, partner_name, partner_email, amount, currency, account_type, institution, account_name, account_number, earning_date)
+        (id, partner_id, partner_name, partner_email, amount, currency, account_type, institution, account_name,
+          account_number, earning_date, gross_revenue, commission_percent, commission_amount, net_earnings)
       values
         (${crypto.randomUUID()}, ${partner.id}, ${partner.name}, ${partner.email}, ${data.amount}, ${data.currency},
-          ${data.accountType}, ${data.institution}, ${data.accountName}, ${data.accountNumber}, ${earningDate})
+          ${data.accountType}, ${data.institution}, ${data.accountName}, ${data.accountNumber}, ${earningDate},
+          ${gross}, ${commission}, ${commissionFee}, ${netEarnings})
       on conflict (partner_id, currency, earning_date) where status in ('pending', 'paid') do nothing
       returning id
     `;

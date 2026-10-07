@@ -23,4 +23,6 @@ NGN). The available amount is net of the partner's commission and any pending
 or paid payout for that settlement day. Partners provide a bank or mobile-money
 provider, account name, and account number in the partner dashboard. Admins
 review requests under **Partner Payouts** and mark them paid or rejected;
-rejected requests release that day's earnings.
+rejected requests release that day's earnings. Admin payout requests include a
+saved earnings breakdown showing gross revenue, the commission rate and amount,
+net partner earnings, and the amount requested for verification before payment.
