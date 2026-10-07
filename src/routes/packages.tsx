@@ -34,7 +34,7 @@ const PACKAGES = [
   },
   {
     price: 1700,
-    detail: "20 mins per session",
+    detail: "15 mins per session",
     tier: "Extended session",
     icon: Gem,
   },

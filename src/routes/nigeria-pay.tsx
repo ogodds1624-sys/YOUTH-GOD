@@ -16,7 +16,7 @@ export const Route = createFileRoute("/nigeria-pay")({
 const PACKAGES = [
   { price: 41986, detail: "3 mins per session", icon: Zap },
   { price: 95968, detail: "10 mins per session", icon: Flame },
-  { price: 203932, detail: "20 mins per session", icon: Gem },
+  { price: 203932, detail: "15 mins per session", icon: Gem },
 ] as const;
 
 function naira(amount: number) {

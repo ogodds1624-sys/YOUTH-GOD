@@ -9,7 +9,7 @@ export function isNairaAmount(amount: number) {
 }
 
 export function minutesFor(amount: number) {
-  if (amount === 1700 || amount === 203932) return 20;
+  if (amount === 1700 || amount === 203932) return 15;
   if (amount === 800 || amount === 95968) return 10;
   if (amount === 500 || amount === 75000) return 7;
   if (amount === 400 || amount === 55000) return 5;
@@ -18,7 +18,7 @@ export function minutesFor(amount: number) {
 
 export function connectMinutesFor(amount: number) {
   const mins = minutesFor(amount);
-  return mins >= 20 ? 15 : mins >= 10 ? 7 : 2;
+  return mins >= 15 ? 15 : mins >= 10 ? 7 : 2;
 }
 
 export function startSession(amount: number) {
