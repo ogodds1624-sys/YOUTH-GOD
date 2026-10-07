@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { ArrowLeft, CalendarDays, CircleDollarSign, Copy, Diamond, LayoutGrid, Star, Users, Wallet } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, CircleDollarSign, Copy, Diamond, LayoutGrid, LogIn, Star, UserRoundPlus, Users, Wallet } from "lucide-react";
 import { SignalLoading } from "@/components/signal-loading";
 import { applyPartner, getPartnerGate, getPartnerPortal, partnerLogin, requestPartnerPayout, type PartnerPortal } from "@/lib/admin-snapshot";
 
@@ -134,33 +134,37 @@ function PartnersPage() {
 
   if (!portal) {
     return (
-      <main className="admin-desk home-theme flex min-h-dvh items-center justify-center px-4 py-10 text-white">
+      <main className="admin-desk partner-portal home-theme flex min-h-dvh items-center justify-center px-4 py-10 text-white">
         <section className="menu-pop relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#111111]/90 text-white backdrop-blur-sm">
           <div className="px-6 pt-8 text-center">
             <Diamond className="mx-auto size-7 fill-red text-red" aria-hidden />
             <h1 className="mt-4 text-3xl font-black tracking-tight">CASINO WORLD</h1>
             <p className="mt-2 text-xs font-extrabold tracking-[0.22em] text-red">PARTNER ACCESS</p>
           </div>
-          <div className="mt-8 grid grid-cols-2 text-sm font-extrabold tracking-wide">
+          <div className="partner-auth-tabs mx-5 mt-7 grid grid-cols-2 gap-1 rounded-2xl p-1">
             <button
               type="button"
+              aria-pressed={mode === "sign"}
               onClick={() => {
                 setMode("sign");
                 setError(null);
                 setApplied(false);
               }}
-              className={"border-b-2 py-3 " + (mode === "sign" ? "border-red text-red" : "border-white/10 text-[#8b95a7]")}
+              className={"partner-auth-tab " + (mode === "sign" ? "is-active" : "")}
             >
+              <LogIn className="size-4" aria-hidden />
               SIGN IN
             </button>
             <button
               type="button"
+              aria-pressed={mode === "apply"}
               onClick={() => {
                 setMode("apply");
                 setError(null);
               }}
-              className={"border-b-2 py-3 " + (mode === "apply" ? "border-red text-red" : "border-white/10 text-[#8b95a7]")}
+              className={"partner-auth-tab " + (mode === "apply" ? "is-active" : "")}
             >
+              <UserRoundPlus className="size-4" aria-hidden />
               BECOME A PARTNER
             </button>
           </div>
@@ -190,9 +194,10 @@ function PartnersPage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="mt-5 h-12 w-full rounded-xl bg-red text-sm font-extrabold tracking-[0.16em] text-white disabled:opacity-70"
+                className="partner-primary-button mt-5 h-12 w-full"
               >
-                {busy ? "SIGNING IN" : "SIGN IN"}
+                {busy ? "SIGNING IN…" : "SIGN IN"}
+                {!busy ? <ArrowRight className="size-4" aria-hidden /> : null}
               </button>
               <p className="mt-4 text-center text-sm leading-relaxed text-[#8b95a7]">
                 New partners must be approved by an admin before first sign-in.
@@ -246,9 +251,10 @@ function PartnersPage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="mt-5 h-12 w-full rounded-xl bg-red text-sm font-extrabold tracking-[0.16em] text-white disabled:opacity-70"
+                className="partner-primary-button mt-5 h-12 w-full"
               >
-                {busy ? "SENDING" : "APPLY AS PARTNER"}
+                {busy ? "SENDING…" : "APPLY AS PARTNER"}
+                {!busy ? <ArrowRight className="size-4" aria-hidden /> : null}
               </button>
               <p className="mt-4 text-center text-sm leading-relaxed text-[#8b95a7]">
                 Your application is reviewed by an admin. You'll be able to sign in once approved.
@@ -282,7 +288,7 @@ function PartnersPage() {
   }
 
   return (
-    <main className="admin-desk home-theme desk-shell text-white">
+    <main className="admin-desk partner-portal home-theme desk-shell text-white">
       <aside className="admin-side border-r border-white/10 bg-transparent px-4 py-6">
         <div className="flex items-center gap-2 px-2">
           <Diamond className="size-4 fill-red text-red" aria-hidden />
@@ -306,7 +312,7 @@ function PartnersPage() {
             PAYOUTS
           </DeskButton>
         </nav>
-        <button type="button" onClick={signOut} className="mt-auto px-3 py-3 text-left text-xs font-extrabold tracking-wide text-[#8b95a7]">
+        <button type="button" onClick={signOut} className="partner-quiet-button mt-auto px-3 py-3 text-left text-xs font-extrabold tracking-wide">
           SIGN OUT
         </button>
       </aside>
@@ -315,25 +321,25 @@ function PartnersPage() {
           <button
             type="button"
             onClick={() => setDesk("overview")}
-            className={"rounded-xl px-3 py-2 text-xs font-extrabold tracking-wide " + (desk === "overview" ? "bg-red text-white" : "text-[#9aa3b2]")}
+            className={"partner-nav-tab " + (desk === "overview" ? "is-active" : "")}
           >
             OVERVIEW
           </button>
           <button
             type="button"
             onClick={() => setDesk("referrals")}
-            className={"rounded-xl px-3 py-2 text-xs font-extrabold tracking-wide " + (desk === "referrals" ? "bg-red text-white" : "text-[#9aa3b2]")}
+            className={"partner-nav-tab " + (desk === "referrals" ? "is-active" : "")}
           >
             REFERRALS
           </button>
           <button
             type="button"
             onClick={() => setDesk("payouts")}
-            className={"rounded-xl px-3 py-2 text-xs font-extrabold tracking-wide " + (desk === "payouts" ? "bg-red text-white" : "text-[#9aa3b2]")}
+            className={"partner-nav-tab " + (desk === "payouts" ? "is-active" : "")}
           >
             PAYOUTS
           </button>
-          <button type="button" onClick={signOut} className="ml-auto text-xs font-bold text-[#8b95a7]">
+          <button type="button" onClick={signOut} className="partner-quiet-button ml-auto px-2 py-2 text-xs font-bold">
             Sign out
           </button>
         </header>
@@ -379,7 +385,7 @@ function Overview({
           <button
             type="button"
             onClick={onCopy}
-            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-lg bg-red px-4 text-xs font-extrabold tracking-wide text-white"
+            className="partner-primary-button h-12 shrink-0 px-4"
           >
             <Copy className="size-4" aria-hidden />
             {copied ? "COPIED" : "COPY LINK"}
@@ -545,7 +551,7 @@ function PayoutDesk({
           </label>
           {error ? <p className="text-sm font-bold text-red md:col-span-2">{error}</p> : null}
           {success ? <p className="text-sm font-bold text-[#7ddea0] md:col-span-2">Payout request sent. You can track its status below.</p> : null}
-          <button type="submit" disabled={busy || available <= 0} className="h-12 w-fit rounded-xl bg-red px-5 text-sm font-extrabold tracking-wide text-white disabled:opacity-60 md:col-span-2">
+          <button type="submit" disabled={busy || available <= 0} className="partner-primary-button h-12 w-fit px-5 md:col-span-2">
             {busy ? "SUBMITTING…" : available <= 0 ? "NO AVAILABLE EARNINGS" : "REQUEST PAYOUT"}
           </button>
           <p className="text-xs text-[#8b95a7] md:col-span-2">Only yesterday's confirmed payments are eligible. One request per currency and settlement day; pending or paid requests use that day's earnings, while rejected requests release them.</p>
@@ -688,9 +694,10 @@ function DeskButton({
     <button
       type="button"
       onClick={onClick}
+      aria-current={active ? "page" : undefined}
       className={
-        "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-extrabold tracking-wide " +
-        (active ? "bg-red text-white" : "text-[#6b7280]")
+        "partner-side-tab flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-extrabold tracking-wide " +
+        (active ? "is-active" : "")
       }
     >
       {icon}
