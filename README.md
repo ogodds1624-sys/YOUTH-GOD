@@ -11,7 +11,7 @@ MoMo/bank transfer details and requires a receipt. Admin approval unlocks sessio
 packages; activation alone does not start or purchase a timed session. This
 requirement also applies to previously connected accounts.
 
-Activation payments appear in admin transactions as **One-time activation fee**.
+Activation payments appear in admin transactions as **Activation**.
 Pending payments resume across visits, and rejected payments can be resubmitted.
 Approved activation fees are included alongside session payments in the existing
 daily and total revenue figures for their currency, without a separate activation
@@ -42,6 +42,11 @@ country, and purchased minutes, including after admin approval or a page reload.
 Later pricing edits do not change pending payments, historical revenue, or
 active session timers. Activation fees never start a timed session.
 
+The admin transaction history displays **15 mins** for every session transaction
+as a display-only label, not the purchased duration. Stored minutes, customer
+package descriptions, and session timers still use the actual purchased duration.
+Activation transactions display the **Activation** label.
+
 ## Session connection popups
 
 The accounts `Ygodds18@gmail.com` and `Casinoworld@gmail.com` are exempt from timed
@@ -54,7 +59,8 @@ Other accounts keep the existing popup schedules.
 Activation and session payments submitted by `Ygodds18@gmail.com` or
 `Casinoworld@gmail.com` are automatically
 approved in the database (case-insensitive email match). Receipts and transaction
-records are retained, the admin **TEST ACCOUNT** label remains visible, and these
+records and tester status are retained, but tester labels are hidden in the admin
+member list and transaction member details. These
 payments never count toward daily, total, or partner revenue. Activation is still
 a separate required payment before session purchases. Migration
 `0009_auto_approve_test_account.sql` also approves this account's existing pending
