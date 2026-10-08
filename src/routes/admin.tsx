@@ -928,8 +928,8 @@ function PartnerDesk({
           <span className="whitespace-nowrap">REFERRAL LINK</span>
           <span className="pl-3 whitespace-nowrap">COMMISSION</span>
           <span className="pl-4 whitespace-nowrap">REVENUE (GHS)</span>
-          <span className="pl-3 whitespace-nowrap">REVENUE (N)</span>
           <span className="pl-3 whitespace-nowrap">REVENUE (YOU)</span>
+          <span className="pl-3 whitespace-nowrap">REVENUE (N)</span>
         </div>
         {partners.length === 0 ? (
           <p className="px-4 py-5 text-sm text-[#6b7280]">No partners yet.</p>
@@ -964,9 +964,6 @@ function PartnerDesk({
                 </div>
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="truncate font-bold">{partner.code}</span>
-                  <button type="button" onClick={() => void copy(partner.id, partner.code)} className="shrink-0 text-[10px] font-extrabold text-[#9aa3b2]">
-                    {copied === partner.id ? "COPIED" : "COPY"}
-                  </button>
                 </div>
                 <div className="min-w-0 overflow-hidden">
                   <button type="button" onClick={() => void copy(`${partner.id}-link`, link)} className="block w-full truncate text-left text-xs font-bold text-white">
@@ -977,7 +974,6 @@ function PartnerDesk({
                   <CommissionRate value={partner.commission} disabled={busy} onSave={(commission) => void run(() => setPartnerCommission({ data: { id: partner.id, commission } }))} />
                 </div>
                 <span className="pl-4 whitespace-nowrap text-xs font-bold">GHS {partner.revenue.toLocaleString("en-GH")}</span>
-                <span className="pl-3 whitespace-nowrap text-xs font-bold">₦{partner.nigeriaRevenue.toLocaleString("en-NG")}</span>
                 <div className="pl-3 text-xs font-bold">
                   <p className="whitespace-nowrap text-[#f0c14d]">
                     GHS {(partner.revenueYouGhs ?? Math.round((partner.revenue * partner.commission) / 100)).toLocaleString("en-GH")}
@@ -986,6 +982,7 @@ function PartnerDesk({
                     ₦{(partner.revenueYouNgn ?? Math.round((partner.nigeriaRevenue * partner.commission) / 100)).toLocaleString("en-NG")}
                   </p>
                 </div>
+                <span className="pl-3 whitespace-nowrap text-xs font-bold">₦{partner.nigeriaRevenue.toLocaleString("en-NG")}</span>
               </article>
             );
           })
@@ -1189,7 +1186,7 @@ function CommissionRate({ value, disabled, onSave }: { value: number; disabled: 
 }
 
 const partnerCols =
-  "partner-row desk-row grid-cols-[minmax(8rem,1.15fr)_8rem_8rem_7rem_minmax(11rem,1.3fr)_10.5rem_9.25rem_8rem_8.5rem]";
+  "partner-row desk-row grid-cols-[minmax(8rem,1.15fr)_8rem_8rem_7rem_minmax(11rem,1.3fr)_10.5rem_9.25rem_8.5rem_8rem]";
 
 function TransactionHistory({
   payments,
