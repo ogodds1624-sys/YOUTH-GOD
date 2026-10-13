@@ -9,6 +9,7 @@ import {
   commissionAmount,
   partnerEarnings,
   previousSettlementDate,
+  partnerSettlementBalances,
   settlementGross,
 } from "@/lib/partner-earnings";
 
@@ -181,6 +182,7 @@ export type PartnerPortal = {
   nigeriaEarnings: number;
   availableGhs: number;
   availableNgn: number;
+  settlements: { currency: "GHS" | "NGN"; earningDate: string; available: number }[];
   payouts: PartnerPayout[];
   days: { label: string; revenue: number; earnings: number; today: boolean }[];
   nigeriaDays: { label: string; revenue: number; earnings: number; today: boolean }[];
@@ -1643,22 +1645,36 @@ export const getPartnerPortal = createServerFn({ method: "POST" })
     const payoutNow = new Date();
     const ghanaYesterday = previousSettlementDate(payoutNow, GHANA_TZ);
     const nigeriaYesterday = previousSettlementDate(payoutNow, NIGERIA_TZ);
-    const yesterdayGhanaGross = settlementGross(
-      ghanaPayments.map((row) => ({ amount: row.amount, date: dayKeyInZone(row.created_at, GHANA_TZ) })),
+    const ghanaSettlementDates = [
       ghanaYesterday,
-    );
-    const yesterdayNigeriaGross = settlementGross(
-      nigeriaPayments.map((row) => ({ amount: row.amount, date: dayKeyInZone(row.created_at, NIGERIA_TZ) })),
+      ...payouts
+        .filter((payout) => payout.currency === "GHS" && payout.status === "rejected")
+        .map((payout) => payout.earningDate),
+    ];
+    const nigeriaSettlementDates = [
       nigeriaYesterday,
+      ...payouts
+        .filter((payout) => payout.currency === "NGN" && payout.status === "rejected")
+        .map((payout) => payout.earningDate),
+    ];
+    const ghanaSettlements = partnerSettlementBalances(
+      ghanaPayments.map((row) => ({ amount: row.amount, date: dayKeyInZone(row.created_at, GHANA_TZ) })),
+      ghanaSettlementDates,
+      commission,
+      payouts.filter((payout) => payout.currency === "GHS"),
     );
-    const reservedGhs = payouts
-      .filter((payout) => payout.currency === "GHS" && payout.earningDate === ghanaYesterday && payout.status !== "rejected")
-      .reduce((sum, payout) => sum + payout.amount, 0);
-    const reservedNgn = payouts
-      .filter((payout) => payout.currency === "NGN" && payout.earningDate === nigeriaYesterday && payout.status !== "rejected")
-      .reduce((sum, payout) => sum + payout.amount, 0);
-    const availableGhs = availablePartnerEarnings(yesterdayGhanaGross, commission, reservedGhs);
-    const availableNgn = availablePartnerEarnings(yesterdayNigeriaGross, commission, reservedNgn);
+    const nigeriaSettlements = partnerSettlementBalances(
+      nigeriaPayments.map((row) => ({ amount: row.amount, date: dayKeyInZone(row.created_at, NIGERIA_TZ) })),
+      nigeriaSettlementDates,
+      commission,
+      payouts.filter((payout) => payout.currency === "NGN"),
+    );
+    const settlements = [
+      ...ghanaSettlements.map((settlement) => ({ ...settlement, currency: "GHS" as const })),
+      ...nigeriaSettlements.map((settlement) => ({ ...settlement, currency: "NGN" as const })),
+    ];
+    const availableGhs = ghanaSettlements.reduce((sum, settlement) => sum + settlement.available, 0);
+    const availableNgn = nigeriaSettlements.reduce((sum, settlement) => sum + settlement.available, 0);
     const now = new Date();
     const ghanaToday = dayKeyInZone(now, GHANA_TZ);
     const nigeriaToday = dayKeyInZone(now, NIGERIA_TZ);
@@ -1730,6 +1746,7 @@ export const getPartnerPortal = createServerFn({ method: "POST" })
       nigeriaEarnings: earnings(nigeriaRevenue),
       availableGhs,
       availableNgn,
+      settlements,
       payouts,
       days,
       nigeriaDays,
@@ -1767,6 +1784,7 @@ export const requestPartnerPayout = createServerFn({ method: "POST" })
     token: string;
     amount: number;
     currency: "GHS" | "NGN";
+    earningDate: string;
     accountType: "Mobile Money" | "Bank Transfer";
     institution: string;
     accountName: string;
@@ -1775,6 +1793,7 @@ export const requestPartnerPayout = createServerFn({ method: "POST" })
     const token = data?.token?.trim() ?? "";
     const amount = Number(data?.amount);
     const currency = data?.currency;
+    const earningDate = typeof data?.earningDate === "string" ? data.earningDate.trim() : "";
     const accountType = data?.accountType;
     const institution = typeof data?.institution === "string" ? data.institution.trim() : "";
     const accountName = typeof data?.accountName === "string" ? data.accountName.trim() : "";
@@ -1782,11 +1801,12 @@ export const requestPartnerPayout = createServerFn({ method: "POST" })
     if (!token) throw new Error("Sign in again.");
     if (!Number.isSafeInteger(amount) || amount <= 0) throw new Error("Enter a valid payout amount.");
     if (currency !== "GHS" && currency !== "NGN") throw new Error("Choose a payout currency.");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(earningDate)) throw new Error("Choose a valid earnings date.");
     if (accountType !== "Mobile Money" && accountType !== "Bank Transfer") throw new Error("Choose a payout method.");
     if (institution.length < 2 || institution.length > 100) throw new Error("Enter a valid bank or mobile money provider.");
     if (accountName.length < 2 || accountName.length > 100) throw new Error("Enter the account holder's name.");
     if (!/^[a-z\d +()-]{4,34}$/i.test(accountNumber)) throw new Error("Enter a valid account number.");
-    return { token, amount, currency, accountType, institution, accountName, accountNumber };
+    return { token, amount, currency, earningDate, accountType, institution, accountName, accountNumber };
   })
   .handler(async ({ data }) => {
     const { getSql } = await import("@/lib/db");
@@ -1800,7 +1820,17 @@ export const requestPartnerPayout = createServerFn({ method: "POST" })
     const commission = Number(partner.commission) || 0;
     const confirmed = await partnerConfirmedPayments(sql, partner.code.toLowerCase());
     const timeZone = data.currency === "NGN" ? NIGERIA_TZ : GHANA_TZ;
-    const earningDate = previousSettlementDate(new Date(), timeZone);
+    const yesterday = previousSettlementDate(new Date(), timeZone);
+    if (data.earningDate !== yesterday) {
+      const rejectedRows = await sql<{ id: string }>`
+        select id from partner_payouts
+        where partner_id = ${partner.id} and currency = ${data.currency}
+          and earning_date = ${data.earningDate} and status = 'rejected'
+        limit 1
+      `;
+      if (rejectedRows.length === 0) throw new Error("Only yesterday's earnings or a previously rejected settlement can be requested.");
+    }
+    const earningDate = data.earningDate;
     const eligiblePayments = confirmed
       .filter((row) => (data.currency === "NGN") === isNairaPayment(Number(row.amount), row.country))
       .map((row) => ({ amount: row.amount, date: dayKeyInZone(row.created_at, timeZone) }));

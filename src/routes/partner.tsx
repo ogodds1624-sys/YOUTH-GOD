@@ -466,7 +466,11 @@ function PayoutDesk({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const available = currency === "GHS" ? portal.availableGhs : portal.availableNgn;
+  const [settlementDate, setSettlementDate] = useState("");
+  const settlementOptions = portal.settlements.filter((settlement) => settlement.currency === currency);
+  const activeSettlement =
+    settlementOptions.find((settlement) => settlement.earningDate === settlementDate) ?? settlementOptions[0];
+  const available = activeSettlement?.available ?? 0;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -483,6 +487,7 @@ function PayoutDesk({
           token,
           amount: Number(amount),
           currency,
+          earningDate: activeSettlement?.earningDate ?? "",
           accountType,
           institution,
           accountName,
@@ -510,20 +515,30 @@ function PayoutDesk({
       <div>
         <p className="text-xs font-extrabold tracking-[0.18em] text-red">PARTNER PAYOUTS</p>
         <h1 className="mt-3 text-2xl font-black tracking-tight">Request a payout</h1>
-        <p className="mt-1 text-sm text-[#8b95a7]">Request only earnings from yesterday's confirmed payments. Ghana and Nigeria balances use their local calendar days.</p>
+        <p className="mt-1 text-sm text-[#8b95a7]">Request yesterday's confirmed earnings or retry an earlier settlement that was rejected. Ghana and Nigeria balances use their local calendar days.</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Stat label="YESTERDAY AVAILABLE · GHS" value={formatMoney(portal.availableGhs, "GHS")} note="Yesterday's confirmed Ghana earnings after commission and previous payouts." icon={<CircleDollarSign className="size-4" />} gold />
-        <Stat label="YESTERDAY AVAILABLE · NGN" value={formatMoney(portal.availableNgn, "NGN")} note="Yesterday's confirmed Nigeria earnings after commission and previous payouts." icon={<CircleDollarSign className="size-4" />} gold />
+        <Stat label="AVAILABLE · GHS" value={formatMoney(portal.availableGhs, "GHS")} note="Yesterday's earnings plus rejected Ghana settlements available to request again." icon={<CircleDollarSign className="size-4" />} gold />
+        <Stat label="AVAILABLE · NGN" value={formatMoney(portal.availableNgn, "NGN")} note="Yesterday's earnings plus rejected Nigeria settlements available to request again." icon={<CircleDollarSign className="size-4" />} gold />
       </div>
       <section className="rounded-3xl border border-white/10 bg-[#111111] px-5 py-5">
         <h2 className="text-lg font-black">Payout account</h2>
         <form onSubmit={(event) => void submit(event)} className="mt-4 grid gap-3 md:grid-cols-2">
           <label className="text-xs font-bold tracking-wide text-[#9aa3b2]">
             CURRENCY
-            <select value={currency} onChange={(event) => setCurrency(event.target.value as "GHS" | "NGN")} className={fieldClass}>
+            <select value={currency} onChange={(event) => { setCurrency(event.target.value as "GHS" | "NGN"); setSettlementDate(""); }} className={fieldClass}>
               <option value="GHS">GHS — Ghana cedi</option>
               <option value="NGN">NGN — Nigerian naira</option>
+            </select>
+          </label>
+          <label className="text-xs font-bold tracking-wide text-[#9aa3b2]">
+            EARNINGS DATE
+            <select required value={activeSettlement?.earningDate ?? ""} onChange={(event) => setSettlementDate(event.target.value)} className={fieldClass}>
+              {settlementOptions.map((settlement) => (
+                <option key={settlement.earningDate} value={settlement.earningDate}>
+                  {settlement.earningDate} — available {formatMoney(settlement.available, currency)}
+                </option>
+              ))}
             </select>
           </label>
           <label className="text-xs font-bold tracking-wide text-[#9aa3b2]">
@@ -554,7 +569,7 @@ function PayoutDesk({
           <button type="submit" disabled={busy || available <= 0} className="partner-primary-button h-12 w-fit px-5 md:col-span-2">
             {busy ? "SUBMITTING…" : available <= 0 ? "NO AVAILABLE EARNINGS" : "REQUEST PAYOUT"}
           </button>
-          <p className="text-xs text-[#8b95a7] md:col-span-2">Only yesterday's confirmed payments are eligible. One request per currency and settlement day; pending or paid requests use that day's earnings, while rejected requests release them.</p>
+          <p className="text-xs text-[#8b95a7] md:col-span-2">Choose yesterday or a previous rejected earnings date. Pending and paid requests use that date's earnings; rejected requests become available to request again.</p>
         </form>
       </section>
       <section className="rounded-3xl border border-white/10 bg-[#111111] px-5 py-5">

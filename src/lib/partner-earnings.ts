@@ -35,3 +35,24 @@ export function settlementGross(
     0,
   );
 }
+
+export function partnerSettlementBalances(
+  payments: readonly { amount: number | string; date: string }[],
+  settlementDates: readonly string[],
+  commissionPercent: number,
+  payouts: readonly { amount: number; earningDate: string; status: string }[],
+) {
+  return [...new Set(settlementDates)].map((earningDate) => {
+    const reservedPayouts = payouts
+      .filter((payout) => payout.earningDate === earningDate && payout.status !== "rejected")
+      .reduce((sum, payout) => sum + payout.amount, 0);
+    return {
+      earningDate,
+      available: availablePartnerEarnings(
+        settlementGross(payments, earningDate),
+        commissionPercent,
+        reservedPayouts,
+      ),
+    };
+  });
+}

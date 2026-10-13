@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   availablePartnerEarnings,
   commissionAmount,
+  partnerSettlementBalances,
   partnerEarnings,
   previousSettlementDate,
   settlementGross,
@@ -50,4 +51,23 @@ test("only includes payments settled on the eligible previous day", () => {
     { amount: 400, date: "2026-10-04" },
   ];
   assert.equal(settlementGross(payments, "2026-10-05"), 350);
+});
+
+test("keeps rejected settlement earnings available on later days", () => {
+  const payments = [
+    { amount: 1000, date: "2026-10-04" },
+    { amount: 500, date: "2026-10-05" },
+  ];
+  const payouts = [
+    { amount: 800, earningDate: "2026-10-04", status: "rejected" },
+    { amount: 200, earningDate: "2026-10-05", status: "pending" },
+  ];
+
+  assert.deepEqual(
+    partnerSettlementBalances(payments, ["2026-10-05", "2026-10-04"], 20, payouts),
+    [
+      { earningDate: "2026-10-05", available: 200 },
+      { earningDate: "2026-10-04", available: 800 },
+    ],
+  );
 });
