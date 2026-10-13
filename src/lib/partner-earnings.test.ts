@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  adminEarnings,
   availablePartnerEarnings,
   availableTotalPartnerEarnings,
   commissionAmount,
@@ -10,21 +11,28 @@ import {
   settlementGross,
 } from "./partner-earnings.ts";
 
-test("deducts the partner commission from gross earnings", () => {
-  assert.equal(commissionAmount(1000, 20), 200);
-  assert.equal(partnerEarnings(1000, 20), 800);
+test("gives the partner their commission percentage of gross revenue and leaves the rest to admin", () => {
+  assert.equal(commissionAmount(1000, 65), 650);
+  assert.equal(partnerEarnings(1000, 65), 650);
+  assert.equal(adminEarnings(1000, 65), 350);
 });
 
 test("applies each partner's commission percentage", () => {
-  assert.equal(partnerEarnings(1000, 0), 1000);
-  assert.equal(partnerEarnings(1000, 10), 900);
-  assert.equal(partnerEarnings(1000, 35), 650);
-  assert.equal(partnerEarnings(1000, 100), 0);
+  assert.equal(partnerEarnings(1000, 0), 0);
+  assert.equal(adminEarnings(1000, 0), 1000);
+  assert.equal(partnerEarnings(1000, 10), 100);
+  assert.equal(adminEarnings(1000, 10), 900);
+  assert.equal(partnerEarnings(1000, 35), 350);
+  assert.equal(adminEarnings(1000, 35), 650);
+  assert.equal(partnerEarnings(1000, 65), 650);
+  assert.equal(adminEarnings(1000, 65), 350);
+  assert.equal(partnerEarnings(1000, 100), 1000);
+  assert.equal(adminEarnings(1000, 100), 0);
 });
 
 test("reserves pending and paid payouts from available earnings", () => {
-  assert.equal(availablePartnerEarnings(1000, 20, 250), 550);
-  assert.equal(availablePartnerEarnings(1000, 20, 900), 0);
+  assert.equal(availablePartnerEarnings(1000, 65, 250), 400);
+  assert.equal(availablePartnerEarnings(1000, 65, 700), 0);
 });
 
 test("calculates available balance from total earnings minus reserved payouts", () => {
@@ -66,15 +74,15 @@ test("keeps rejected settlement earnings available on later days", () => {
     { amount: 500, date: "2026-10-05" },
   ];
   const payouts = [
-    { amount: 800, earningDate: "2026-10-04", status: "rejected" },
+    { amount: 500, earningDate: "2026-10-04", status: "rejected" },
     { amount: 200, earningDate: "2026-10-05", status: "pending" },
   ];
 
   assert.deepEqual(
-    partnerSettlementBalances(payments, ["2026-10-05", "2026-10-04"], 20, payouts),
+    partnerSettlementBalances(payments, ["2026-10-05", "2026-10-04"], 65, payouts),
     [
-      { earningDate: "2026-10-05", available: 200 },
-      { earningDate: "2026-10-04", available: 800 },
+      { earningDate: "2026-10-05", available: 125 },
+      { earningDate: "2026-10-04", available: 650 },
     ],
   );
 });

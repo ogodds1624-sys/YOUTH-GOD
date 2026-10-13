@@ -416,7 +416,7 @@ function Overview({
         <Stat
           label={`YOUR EARNINGS · ${portal.commission}%`}
           value={`GHS ${portal.earnings.toLocaleString("en-GH")}`}
-          note={`After ${portal.commission}% commission on confirmed Ghana payments`}
+          note={`${portal.commission}% commission on confirmed Ghana payments`}
           gold
           icon={<Star className="size-4" />}
         />
@@ -438,7 +438,7 @@ function Overview({
         <Stat
           label={`YOUR EARNINGS · ${portal.commission}%`}
           value={`₦${portal.nigeriaEarnings.toLocaleString("en-NG")}`}
-          note={`After ${portal.commission}% commission on confirmed Nigeria payments`}
+          note={`${portal.commission}% commission on confirmed Nigeria payments`}
           gold
           icon={<Star className="size-4" />}
         />

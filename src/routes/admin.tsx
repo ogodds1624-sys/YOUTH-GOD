@@ -977,10 +977,10 @@ function PartnerDesk({
                 <span className="pl-3 whitespace-nowrap text-xs font-bold">₦{partner.nigeriaRevenue.toLocaleString("en-NG")}</span>
                 <div className="pl-3 text-xs font-bold">
                   <p className="whitespace-nowrap text-[#f0c14d]">
-                    GHS {(partner.revenueYouGhs ?? Math.round((partner.revenue * partner.commission) / 100)).toLocaleString("en-GH")}
+                    GHS {(partner.revenueYouGhs ?? (partner.revenue - Math.round((partner.revenue * partner.commission) / 100))).toLocaleString("en-GH")}
                   </p>
                   <p className="mt-1 whitespace-nowrap text-[#f0c14d]">
-                    ₦{(partner.revenueYouNgn ?? Math.round((partner.nigeriaRevenue * partner.commission) / 100)).toLocaleString("en-NG")}
+                    ₦{(partner.revenueYouNgn ?? (partner.nigeriaRevenue - Math.round((partner.nigeriaRevenue * partner.commission) / 100))).toLocaleString("en-NG")}
                   </p>
                 </div>
               </article>
@@ -1062,18 +1062,23 @@ function PartnerPayoutDesk({
                       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                         <PayoutAmount label="TOTAL REVENUE" amount={payout.grossRevenue} currency={payout.currency} />
                         <PayoutAmount
-                          label={`COMMISSION · ${payout.commissionPercent}%`}
-                          amount={payout.commissionAmount}
+                          label={`ADMIN SHARE · ${Math.max(0, 100 - payout.commissionPercent)}%`}
+                          amount={payout.grossRevenue - payout.netEarnings}
                           currency={payout.currency}
-                          detail="Deducted from revenue"
+                          detail="Retained by platform"
                         />
-                        <PayoutAmount label="PARTNER NET EARNINGS" amount={payout.netEarnings} currency={payout.currency} />
+                        <PayoutAmount
+                          label={`PARTNER EARNINGS · ${payout.commissionPercent}%`}
+                          amount={payout.netEarnings}
+                          currency={payout.currency}
+                        />
                         <PayoutAmount label="REQUESTED PAYOUT" amount={payout.amount} currency={payout.currency} />
                       </div>
                       <p className="mt-3 text-xs text-[#8b95a7]">
-                        {formatPayoutAmount(payout.grossRevenue, payout.currency)} revenue −{" "}
-                        {formatPayoutAmount(payout.commissionAmount, payout.currency)} commission ={" "}
-                        {formatPayoutAmount(payout.netEarnings, payout.currency)} net earnings.
+                        {formatPayoutAmount(payout.grossRevenue, payout.currency)} revenue ×{" "}
+                        {payout.commissionPercent}% partner commission ={" "}
+                        {formatPayoutAmount(payout.netEarnings, payout.currency)} partner earnings (
+                        {formatPayoutAmount(Math.max(0, payout.grossRevenue - payout.netEarnings), payout.currency)} admin share).
                         {payout.amount > payout.netEarnings ? " Requested amount exceeds net earnings." : ""}
                       </p>
                     </>

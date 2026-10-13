@@ -5,7 +5,9 @@ import { isNairaAmount } from "@/lib/desk-session";
 import type { PaymentPurpose } from "@/lib/activation";
 import { validatePricing, validatePaymentQuote, type PricingSettings } from "@/lib/pricing";
 import {
+  adminEarnings,
   availablePartnerEarnings,
+  availableTotalPartnerEarnings,
   commissionAmount,
   partnerEarnings,
   previousSettlementDate,
@@ -625,8 +627,8 @@ async function readSnapshot(sql: Sql): Promise<AdminSnapshot> {
       referrals: extra(countBy),
       revenue: extra(ghsBy),
       nigeriaRevenue: extra(ngnBy),
-      revenueYouGhs: commissionAmount(extra(ghsBy), Number(row.commission) || 0),
-      revenueYouNgn: commissionAmount(extra(ngnBy), Number(row.commission) || 0),
+      revenueYouGhs: adminEarnings(extra(ghsBy), Number(row.commission) || 0),
+      revenueYouNgn: adminEarnings(extra(ngnBy), Number(row.commission) || 0),
     };
   });
   const payoutRows = await sql<{
@@ -1802,8 +1804,8 @@ export const requestPartnerPayout = createServerFn({ method: "POST" })
     const eligiblePayments = confirmed
       .filter((row) => (data.currency === "NGN") === isNairaPayment(Number(row.amount), row.country));
     const gross = eligiblePayments.reduce((sum, row) => sum + Number(row.amount), 0);
-    const commissionFee = commissionAmount(gross, commission);
     const netEarnings = partnerEarnings(gross, commission);
+    const adminCut = adminEarnings(gross, commission);
     const reservedRows = await sql<{ reserved: number | string }>`
       select coalesce(sum(amount), 0) as reserved
       from partner_payouts
@@ -1823,7 +1825,7 @@ export const requestPartnerPayout = createServerFn({ method: "POST" })
       values
         (${crypto.randomUUID()}, ${partner.id}, ${partner.name}, ${partner.email}, ${data.amount}, ${data.currency},
           ${data.accountType}, ${data.institution}, ${data.accountName}, ${data.accountNumber}, ${earningDate},
-          ${gross}, ${commission}, ${commissionFee}, ${netEarnings})
+          ${gross}, ${commission}, ${adminCut}, ${netEarnings})
       on conflict (partner_id, currency) where status = 'pending' do nothing
       returning id
     `;
