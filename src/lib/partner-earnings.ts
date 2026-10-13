@@ -10,6 +10,10 @@ export function availablePartnerEarnings(grossEarnings: number, commissionPercen
   return Math.max(0, partnerEarnings(grossEarnings, commissionPercent) - reservedPayouts);
 }
 
+export function availableTotalPartnerEarnings(totalEarnings: number, reservedPayouts: number) {
+  return Math.max(0, totalEarnings - reservedPayouts);
+}
+
 export function previousSettlementDate(now: Date, timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone,

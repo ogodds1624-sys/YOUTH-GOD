@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   availablePartnerEarnings,
+  availableTotalPartnerEarnings,
   commissionAmount,
   partnerSettlementBalances,
   partnerEarnings,
@@ -24,6 +25,12 @@ test("applies each partner's commission percentage", () => {
 test("reserves pending and paid payouts from available earnings", () => {
   assert.equal(availablePartnerEarnings(1000, 20, 250), 550);
   assert.equal(availablePartnerEarnings(1000, 20, 900), 0);
+});
+
+test("calculates available balance from total earnings minus reserved payouts", () => {
+  assert.equal(availableTotalPartnerEarnings(1500, 500), 1000);
+  assert.equal(availableTotalPartnerEarnings(1500, 1500), 0);
+  assert.equal(availableTotalPartnerEarnings(1500, 2000), 0);
 });
 
 test("uses the prior local calendar day for Ghana and Nigeria settlements", () => {
